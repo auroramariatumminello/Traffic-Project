@@ -24,20 +24,25 @@ def from_json_to_list(data):
     return result
 
 def get_data_of_day(url,sdate,edate,filename="history.csv"):
-    start = time.time()
-    req = requests.get(url.format(sdate,edate))
-    day_data = req.json()["data"]
-    results = from_json_to_list(day_data)
-    headers = ["Timestamp","Count","Station"]
-    pd.DataFrame(results,columns=headers).to_csv(filename, 
-                                                 mode='a',
-                                                 index=False,
-                                                 header=False)
-    print(start-time.time())
-    return results
+    try:
+        start = time.time()
+        req = requests.get(url.format(sdate,edate))
+        day_data = req.json()["data"]
+        results = from_json_to_list(day_data)
+        headers = ["Timestamp","Count","Station"]
+        pd.DataFrame(results,columns=headers).to_csv(filename, 
+                                                    mode='a',
+                                                    index=False,
+                                                    header=False)
+        print(time.time()-start)
+        return results
+    except ValueError :
+        print("Gateway Time-out error")
+        time.sleep(60)
+        get_data_of_day(url, sdate, edate,filename)
 
 # %%
-date_range_2019 = pd.date_range(dt.date(2019,1,1),dt.date(2019,6,1)-dt.timedelta(days=1),freq='d')
+date_range_2019 = pd.date_range(dt.date(2019,11,26),dt.date(2020,1,1)-dt.timedelta(days=1),freq='d')
 date_range_2019 = [date.strftime("%Y-%m-%d") for date in date_range_2019]
 for i in (range(len(date_range_2019)-1)):
     print("Saving "+str(date_range_2019[i]))
