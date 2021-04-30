@@ -8,6 +8,7 @@ import os.path
 import time
 from datetimerange import DateTimeRange
 import pytz
+from BluetoothStation import *
 # %%
 # history till 2019-11-26
 date_range = pd.date_range(dt.date(2013, 1, 1), dt.date(
@@ -89,12 +90,23 @@ for i in (range(len(date_range_2019)-1)):
 
 # %%
 # Datetime range
-time_range = DateTimeRange("2019-12-31T00:00:00.000+0000", 
-                           "2020-01-01T00:00:00.000+0000")
+time_range = DateTimeRange("2020-01-01T00:00:00.000+0000", 
+                           "2020-01-02T00:00:00.000+0000")
 time_range = [value for value in time_range.range(dt.timedelta(hours=1))]
 #%%
 for i in range(len(time_range)-1):
     sdate = time_range[i]
     edate = time_range[i+1]
     get_data_of_day(url, sdate, edate,filename="test.csv")
+    
+# %%
+# Download list of bluetooth stations
+stations = requests.get("https://mobility.api.opendatahub.bz.it/v2/flat%2Cnode/BluetoothStation?limit=-1&distinct=true").json()['data']
+bluetooth_stations = [BluetoothStation(station['sname'],Position(station['scoordinate']['y'],station['scoordinate']['x'])) for station in stations if 'scoordinate' in station.keys()]
+bluetooth_stations = bluetooth_stations + [BluetoothStation(station['sname'], None) for station in stations if 'scoordinate' not in station.keys()]
+# %%
+[Position(stations[i]['scoordinate']['x'],stations[i]['scoordinate']['y']) for i in range(len(stations))]
+# %%
+# %%
+bluetooth_stations
 # %%
