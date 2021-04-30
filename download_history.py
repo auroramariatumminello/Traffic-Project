@@ -23,13 +23,12 @@ data_format = "{}-{}-{}T{}%3A{}%3A{}.000%2B0000"  # YYYY-mm-ddTHH:MM:SS
 def from_json_to_list(data):
     result = []
     for element in data:
-        if type(element['mvalue'])!= int:
-            element['mvalue'] = 0
-        result.append([
-            element['mvalidtime'][:19],
-            element['mvalue'],
-            element['sname']
-        ])
+        if element['tname'] == "Bluetooth Count record" and element['ttype']=='Count':
+            result.append([
+                element['mvalidtime'][:19],
+                element['mvalue'],
+                element['sname']
+            ])
     return result
 
 
