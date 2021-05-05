@@ -105,8 +105,7 @@ stations = requests.get("https://mobility.api.opendatahub.bz.it/v2/flat%2Cnode/B
 bluetooth_stations = [BluetoothStation(station['sname'],Position(station['scoordinate']['y'],station['scoordinate']['x'])) for station in stations if 'scoordinate' in station.keys()]
 bluetooth_stations = bluetooth_stations + [BluetoothStation(station['sname'], None) for station in stations if 'scoordinate' not in station.keys()]
 # %%
-[Position(stations[i]['scoordinate']['x'],stations[i]['scoordinate']['y']) for i in range(len(stations))]
 # %%
-# %%
-bluetooth_stations
+manager = MySQLStationManager()
+manager.insert_stations(bluetooth_stations)
 # %%
