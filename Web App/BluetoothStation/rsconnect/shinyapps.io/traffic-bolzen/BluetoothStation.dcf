@@ -1,0 +1,13 @@
+name: BluetoothStation
+title: BluetoothStation
+username:
+account: traffic-bolzen
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 4090777
+bundleId: 4566388
+url: https://traffic-bolzen.shinyapps.io/BluetoothStation/
+when: 1620322849.39978
+lastSyncTime: 1620322849.39978
+asMultiple: FALSE
+asStatic: FALSE
