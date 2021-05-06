@@ -17,7 +17,7 @@ class Position:
 
 class BluetoothStation:
     
-    def __init__(self, name: str, coords: Optional[Position] = None):
+    def __init__(self, name: str, coords: Optional[Position] = Position(None, None)):
         """
         Args:
             name ([String]): name and id of the Station
@@ -25,6 +25,9 @@ class BluetoothStation:
         """
         self.name = name
         self.coords = coords
+    
+    def to_list(self):
+        return [self.name] + self.coords.to_list()
       
 class Measurement:
     
@@ -36,6 +39,10 @@ class Measurement:
     def to_list(self):
         return [self.timestamp,self.count,self.station]
     
+    def from_list(self, db_list:List<String>):
+        return Measurement(db_list[0],db_list[1],db_list[2])
+
+    
 #%%
 
 class MySQLStationManager:
@@ -45,7 +52,7 @@ class MySQLStationManager:
             self.connection = mysql.connector.connect(
                 host="localhost",
                 user="root",
-                password="BigData",
+                password="banana182",
                 port=3306,
                 database="bluetoothstations",
                 auth_plugin='mysql_native_password',
@@ -78,11 +85,18 @@ class MySQLStationManager:
         query = "INSERT into station (name, latitude, longitude) VALUES (%s, %s, %s)"
 
         for station in stations:
-            cursor.execute(query, (
-                station.name,
-                station.coords.lat,
-                station.coords.lon
-            ))
+            if station.coords.lat == None or station.coords.lon == None:
+                cursor.execute(
+                    query, (
+                    station.name,
+                    None,
+                    None))
+            else:
+                cursor.execute(query, (
+                    station.name,
+                    station.coords.lat,
+                    station.coords.lon
+                ))
         print("Data inserted.")
         cursor.close()
 

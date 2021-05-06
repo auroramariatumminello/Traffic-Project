@@ -9,6 +9,24 @@ import time
 from datetimerange import DateTimeRange
 import pytz
 from BluetoothStation import *
+
+# %%
+# Download list of bluetooth stations
+stations = requests.get("https://mobility.api.opendatahub.bz.it/v2/flat%2Cnode/BluetoothStation?limit=-1&distinct=true").json()['data']
+bluetooth_stations = [BluetoothStation(station['sname'],Position(station['scoordinate']['y'],station['scoordinate']['x'])) for station in stations if 'scoordinate' in station.keys()]
+bluetooth_stations = bluetooth_stations + [BluetoothStation(station['sname']) for station in stations if 'scoordinate' not in station.keys()]
+# %%
+for el in bluetooth_stations[-7:]:
+    print(el.to_list())
+#print(len(bluetooth_stations))
+#print(len(set(bluetooth_stations)))
+# %%
+x = Position(None, None)
+print(x.to_list())
+# %%
+manager = MySQLStationManager()
+manager.insert_stations(bluetooth_stations)
+# %%
 # %%
 # history till 2019-11-26
 date_range = pd.date_range(dt.date(2013, 1, 1), dt.date(
@@ -33,7 +51,7 @@ def from_json_to_list(data):
     return result
 
 
-def get_data_of_day(url, sdate, edate, filename="history.csv"):
+def get_data_of_day(url, sdate, edate, filename=None):
     try:
         start = time.time()
         if (dt.datetime(2019, 11, 26, tzinfo=pytz.UTC) <= sdate <= dt.datetime.now(tz=pytz.UTC)) or (dt.datetime(2019, 11, 26, tzinfo=pytz.UTC) <= edate <= dt.datetime.now(tz=pytz.UTC)):
@@ -61,11 +79,16 @@ def get_data_of_day(url, sdate, edate, filename="history.csv"):
             req = requests.get(url.format(sdate, edate))
         day_data = req.json()["data"]
         results = from_json_to_list(day_data)
-        headers = ["Timestamp", "Count", "Station"]
-        pd.DataFrame(results, columns=headers).to_csv(filename,
-                                                      mode='a',
-                                                      index=False,
-                                                      header=False)
+        if filename == None:
+            results = [Measurement().from_list(x) for x in results]
+
+        else:
+
+            headers = ["Timestamp", "Count", "Station"]
+            pd.DataFrame(results, columns=headers).to_csv(filename,
+                                                        mode='a',
+                                                        index=False,
+                                                        header=False)
         print(time.time()-start)
         return results
     except ValueError:
@@ -94,18 +117,9 @@ time_range = DateTimeRange("2020-01-01T00:00:00.000+0000",
                            "2020-01-02T00:00:00.000+0000")
 time_range = [value for value in time_range.range(dt.timedelta(hours=1))]
 #%%
+manager = MySQLStationManager()
 for i in range(len(time_range)-1):
     sdate = time_range[i]
     edate = time_range[i+1]
-    get_data_of_day(url, sdate, edate,filename="test.csv")
-    
-# %%
-# Download list of bluetooth stations
-stations = requests.get("https://mobility.api.opendatahub.bz.it/v2/flat%2Cnode/BluetoothStation?limit=-1&distinct=true").json()['data']
-bluetooth_stations = [BluetoothStation(station['sname'],Position(station['scoordinate']['y'],station['scoordinate']['x'])) for station in stations if 'scoordinate' in station.keys()]
-bluetooth_stations = bluetooth_stations + [BluetoothStation(station['sname'], None) for station in stations if 'scoordinate' not in station.keys()]
-# %%
-# %%
-manager = MySQLStationManager()
-manager.insert_stations(bluetooth_stations)
-# %%
+    #get_data_of_day(url, sdate, edate)
+    manager.insert_measurements(get_data_of_day(url, sdate, edate))
