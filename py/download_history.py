@@ -15,9 +15,8 @@ from BluetoothStation import *
 from Database_Manager import MySQLStationManager
 
 # %%
+
 # Download list of bluetooth stations
-
-
 def get_stations_details(url: str = "https://mobility.api.opendatahub.bz.it/v2/flat%2Cnode/BluetoothStation?limit=-1&distinct=true"):
     # Requesting informations about stations
     stations = requests.get(url).json()['data']
@@ -34,19 +33,14 @@ def get_stations_details(url: str = "https://mobility.api.opendatahub.bz.it/v2/f
 
     return bluetooth_stations
 
-
+#%%
+[x.to_list() for x in get_stations_details()]
 # %%
 # Creating a MySQL Database Manager
 manager = MySQLStationManager()
 
 # Inserting the requested stations inside the station table
 manager.insert_stations(get_stations_details())
-# %%
-
-# history till 2019-11-26
-date_range = pd.date_range(dt.date(2013, 1, 1), dt.date(
-    2021, 4, 25)-dt.timedelta(days=1), freq='d')
-date_range = [date.strftime("%Y-%m-%d") for date in date_range]
 # %%
 
 # URL to request vehicle detection in Bluetooth Stations
@@ -109,7 +103,15 @@ for i in (range(len(date_range_2019)-1)):
 
 
 # %%
-# Datetime range
+# %%
+# Date ranges to download
+
+# Date range from 01-01-2013 to 26-11-2019 (in days)
+date_range = pd.date_range(dt.date(2013, 1, 1), 
+                           dt.date(2019, 11, 26)-dt.timedelta(days=1), freq='d')
+date_range = [date.strftime("%Y-%m-%d") for date in date_range]
+
+# Datetime range fro 26-11-2019 00:00:00 to nowadays
 time_range = DateTimeRange("2019-11-26T00:00:00.000+0000",
                            "2020-01-02T00:00:00.000+0000")
 time_range = [value for value in time_range.range(dt.timedelta(hours=1))]
