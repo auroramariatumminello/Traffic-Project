@@ -5,9 +5,9 @@ account: traffic-bolzen
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 4090777
-bundleId: 4566388
+bundleId: 4569563
 url: https://traffic-bolzen.shinyapps.io/BluetoothStation/
-when: 1620322849.39978
-lastSyncTime: 1620322849.39978
+when: 1620384882.56733
+lastSyncTime: 1620384882.56733
 asMultiple: FALSE
 asStatic: FALSE
