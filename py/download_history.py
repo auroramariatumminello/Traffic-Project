@@ -12,7 +12,10 @@ import pytz
 
 # Importing scripts with objects
 from BluetoothStation import *
-from Database_Manager import MySQLStationManager
+from Database_Manager import *
+#%%
+# Creating a MySQL Database Manager
+manager = MySQLStationManager("Aurora")
 
 # %%
 
@@ -32,15 +35,9 @@ def get_stations_details(url: str = "https://mobility.api.opendatahub.bz.it/v2/f
                                                for station in stations if 'scoordinate' not in station.keys()]
 
     return bluetooth_stations
-
-#%%
-[x.to_list() for x in get_stations_details()]
 # %%
-# Creating a MySQL Database Manager
-manager = MySQLStationManager()
-
 # Inserting the requested stations inside the station table
-manager.insert_stations(get_stations_details())
+# manager.insert_stations(get_stations_details())
 # %%
 
 # URL to request vehicle detection in Bluetooth Stations
@@ -48,14 +45,12 @@ data_url = "https://mobility.api.opendatahub.bz.it/v2/flat%2Cnode/BluetoothStati
 data_format = "{}-{}-{}T{}%3A{}%3A{}.000%2B0000"  # YYYY-mm-ddTHH:MM:SS
 
 # %%
-
-
 def get_data_of_day(url, sdate, edate, filename=None):
     try:
         start = time.time()
-        if (dt.datetime(2019, 11, 26, tzinfo=pytz.UTC) <= sdate <= dt.datetime.now(tz=pytz.UTC)) or (dt.datetime(2019, 11, 26, tzinfo=pytz.UTC) <= edate <= dt.datetime.now(tz=pytz.UTC)):
-            # For limited requests (every hour)
-            req = requests.get(url.format(data_format.format(sdate.year, 
+        #if (dt.datetime(2019, 11, 26, tzinfo=pytz.UTC) <= sdate <= dt.datetime.now(tz=pytz.UTC)) or (dt.datetime(2019, 11, 26, tzinfo=pytz.UTC) <= edate <= dt.datetime.now(tz=pytz.UTC)):
+        #    # For limited requests (every hour)
+        req = requests.get(url.format(data_format.format(sdate.year, 
                                                              sdate.strftime("%m"), 
                                                              sdate.strftime("%d"),
                                                              sdate.strftime("%H"),
@@ -67,19 +62,24 @@ def get_data_of_day(url, sdate, edate, filename=None):
                                                              edate.strftime("%H"),
                                                              edate.strftime("%M"),
                                                              edate.strftime("%S"))))
-        else:
+        #else:
             # For ordinary requests
-            req = requests.get(url.format(sdate, edate))
+        #    req = requests.get(url.format(sdate.isoformat(), edate.isoformat()))
         day_data = req.json()["data"]
-        results = Measurement().from_json(day_data)
-        if filename != None:
-            results = [x.to_list() for x in results]
-            headers = ["Timestamp", "Count", "Station"]
-            pd.DataFrame(results, columns=headers).to_csv(filename,
-                                                          mode='a',
-                                                          index=False,
-                                                          header=False)
+        results = from_json_to_list(day_data)
+        headers = ["Timestamp", "Count", "Station"]
+        df = pd.DataFrame(results, columns=headers).groupby(['Timestamp','Station'],as_index=False).sum()
+        
+        # From dataframe to Measurements list
+        results = [Measurement(df.iloc[i, 0],
+                               int(df.iloc[i, 2]),
+                               BluetoothStation(df.iloc[i, 1])) for i in range(len(df))]
         print(time.time()-start)
+        if filename != None:
+            df.to_cv(filename,
+                     mode='a',
+                     index=False,
+                     header=False)
         return results
     except ValueError:
         # Possible error of gateway, retry after 1 minute
@@ -88,37 +88,63 @@ def get_data_of_day(url, sdate, edate, filename=None):
         get_data_of_day(url, sdate, edate, filename)
 
 
-# %%
+def from_json_to_list(json_data: json):
+    result = []
+    for element in json_data:
+        if element['tname'] == "Bluetooth Count record" and element['ttype'] == 'Count':
+            m = [datetime.strptime(element['mvalidtime'][:19], '%Y-%m-%d %H:%M:%S'),
+                 element['mvalue'],
+                 element['sname']]
+            result.append(m)
+    return result
+# Returns a list of Measurement objects from json already imported
+def from_json_to_measurement(json_data: json):
+    result = []
+    for element in json_data:
+        if element['tname'] == "Bluetooth Count record" and element['ttype']=='Count':
+            m = Measurement(datetime.strptime(element['mvalidtime'][:19],'%Y-%m-%d %H:%M:%S'),
+                            element['mvalue'],
+                            BluetoothStation(element['sname']))
+            result.append(m)
+    return result
 
-# Collecting data from january 2018 to November 2019
-date_range_2019 = pd.date_range(dt.date(2018, 1, 1), dt.date(
-    2019, 11, 26)-dt.timedelta(days=1), freq='d')
-date_range_2019 = [date.strftime("%Y-%m-%d") for date in date_range_2019]
-for i in (range(len(date_range_2019)-1)):
-    print("Saving "+str(date_range_2019[i]))
-    get_data_of_day(url,
-                    date_range_2019[i],
-                    date_range_2019[i+1],
-                    filename='2019.csv')
-
-
-# %%
-# %%
-# Date ranges to download
+#%%
+# DATE RANGES
 
 # Date range from 01-01-2013 to 26-11-2019 (in days)
-date_range = pd.date_range(dt.date(2013, 1, 1), 
-                           dt.date(2019, 11, 26)-dt.timedelta(days=1), freq='d')
-date_range = [date.strftime("%Y-%m-%d") for date in date_range]
+old_date_range = DateTimeRange("2018-01-01T00:00:00.000+0000",
+                               "2019-11-26T00:00:00.000+0000")
+old_date_range = [value for value in old_date_range.range(dt.timedelta(hours=1))]
 
-# Datetime range fro 26-11-2019 00:00:00 to nowadays
-time_range = DateTimeRange("2019-11-26T00:00:00.000+0000",
-                           "2020-01-02T00:00:00.000+0000")
-time_range = [value for value in time_range.range(dt.timedelta(hours=1))]
+# Datetime range from 26-11-2019 00:00:00 to nowadays (in hours)
+new_date_range = DateTimeRange("2019-11-26T00:00:00.000+0000",
+                               "2020-01-01T00:00:00.000+0000")
+new_date_range = [value for value in new_date_range.range(dt.timedelta(hours=1))]
+
 # %%
-manager = MySQLStationManager()
-for i in range(len(time_range)-1):
-    sdate = time_range[i]
-    edate = time_range[i+1]
-    #get_data_of_day(url, sdate, edate)
-    manager.insert_measurements(get_data_of_day(url, sdate, edate))
+#   TODO: Progress bar
+def get_data_in_range(date_range,url=data_url):
+    manager = MySQLStationManager("Aurora")
+    for i in range(len(date_range)-1):
+        sdate = date_range[i]
+        print("Saving "+str(sdate))
+        edate = date_range[i+1]
+        manager.insert_measurements(get_data_of_day(url, sdate, edate))
+
+#%%
+res = get_data_of_day(data_url, old_date_range[-2], old_date_range[-1])
+# %%
+res
+# %%
+manager.insert_measurements(res)
+# %%
+for i in res:
+    if i.station.name=='siemens':
+        print([i.count,
+            i.timestamp.isoformat(),
+            i.station.name])
+    
+
+# %%
+get_data_in_range(old_date_range)
+# %%
