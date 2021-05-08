@@ -7,12 +7,16 @@ from BluetoothStation import *
 
 class MySQLStationManager:
     
-    def __init__(self):
+    def __init__(self,user="Leonardo"):
         try:
+            if user=='Aurora':
+                password = "MyNewPass"
+            else:
+                password="banana182"
             self.connection = mysql.connector.connect(
-                host="localhost",
+                host="127.0.0.1",
                 user="root",
-                password="banana182",
+                password=password,
                 port=3306,
                 database="bluetoothstations",
                 auth_plugin='mysql_native_password',
@@ -31,11 +35,11 @@ class MySQLStationManager:
         cursor = self.connection.cursor()
         query = "INSERT into measurement (timestamp, count, station) VALUES (%s, %s, %s)"
 
-        for observation in observations:
+        for obs in observations:
             cursor.execute(query, (
-                observation.timestamp,
-                observation.count,
-                observation.station
+                obs.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+                obs.count,
+                obs.station.name
             ))
         print("Data inserted.")
         cursor.close()

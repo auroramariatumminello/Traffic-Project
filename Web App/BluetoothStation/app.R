@@ -34,31 +34,6 @@ server <- function(input, output) {
                        lng = ~ lon, 
                        popup = ~as.character(name), 
                        label = ~as.character(paste0("Name: ", sep = " ", name)))
-    }),
-    
-    observe({
-        p <- input$station # get input value
-        if (is.null(p))             
-            return()
-        
-        m2<-leafletProxy("Zone", session = session) # get map widget
-        
-        # create zone labels
-        
-        selected <- selected_station() # get selected zone centroid
-        # create selected zone label
-        
-        type <<- click_count%%2
-        if (type ==0 ){ 
-            # clear the centroids displayed
-            # add a marker, the centroid of the new origin zone
-            
-        }
-        
-        if (type == 1){
-            # add a marker, the centroid of the new destination zone
-        }
-        click_count <<- click_count+1    # keep track of map clicks
     })
 }
 
