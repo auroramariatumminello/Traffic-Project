@@ -125,7 +125,7 @@ new_date_range = [value for value in new_date_range.range(dt.timedelta(hours=1))
 #   TODO: Progress bar
 def get_data_in_range(date_range,url=data_url):
     manager = MySQLStationManager("Aurora")
-    for i in range(len(date_range)-1):
+    for i in tqdm.trange(len(date_range)-1):
         sdate = date_range[i]
         print("Saving "+str(sdate))
         edate = date_range[i+1]
@@ -138,13 +138,12 @@ res
 # %%
 manager.insert_measurements(res)
 # %%
-for i in res:
-    if i.station.name=='siemens':
-        print([i.count,
-            i.timestamp.isoformat(),
-            i.station.name])
+import tqdm
+for i in tqdm.trange(len(res)):
+    if res[i].station.name=='siemens':
+        print([res[i].count])
     
-
+old_date_range[8]
 # %%
 get_data_in_range(old_date_range)
 # %%
