@@ -35,11 +35,10 @@ class Measurement:
         self.count = count
         self.station = station
     
-    # TODO: Handle exception    
     def to_list(self):
         try:
             return [self.timestamp,self.count,self.station.name]
-        except AttributeError:
+        except:
             return []
     
     def from_list(self, db_list:List[str]):

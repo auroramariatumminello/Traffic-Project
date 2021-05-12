@@ -28,21 +28,22 @@ class MySQLStationManager:
         self.measurements = []
         self.stations = []
 
-
     # Need to update: ask whether the station is already in the station table
     def insert_measurements(self, observations: List[Measurement]):
         # If the station is in BluetoothStation table
         cursor = self.connection.cursor()
-        query = "INSERT into measurement (timestamp, count, station) VALUES (%s, %s, %s)"
-
-        for obs in observations:
-            cursor.execute(query, (
-                obs.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
-                obs.count,
-                obs.station.name
-            ))
-        print("Data inserted.")
-        cursor.close()
+        query = "INSERT IGNORE into measurement (timestamp, count, station) VALUES (%s, %s, %s)"
+        try:
+            for obs in observations:
+                cursor.execute(query, (
+                    obs.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+                    obs.count,
+                    obs.station.name
+                ))
+            print("Data inserted.")
+            cursor.close()
+        except mysql.connector.IntegrityError:
+            pass
          
     def insert_stations(self, stations: List[BluetoothStation]):
         cursor = self.connection.cursor()
@@ -61,7 +62,7 @@ class MySQLStationManager:
                     station.coords.lat,
                     station.coords.lon
                 ))
-        print("Data inserted.")
+        # print("Data inserted.")
         cursor.close()
 
     # Generalize by inserting optional parameter about the station(s)
