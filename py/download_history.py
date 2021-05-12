@@ -77,14 +77,14 @@ def get_data_of_day(url, sdate, edate, filename=None):
         results = [Measurement(df.iloc[i, 0],
                                int(df.iloc[i, 2]),
                                BluetoothStation(df.iloc[i, 1])) for i in range(len(df))]
-        print(time.time()-start)
+        # print(time.time()-start)
         if filename != None:
             df.to_cv(filename,
                      mode='a',
                      index=False,
                      header=False)
         return results
-    except ValueError:
+    except (ValueError,KeyError):
         # Possible error of gateway, retry after 1 minute
         print("Gateway Time-out error")
         time.sleep(60)
@@ -114,7 +114,8 @@ def from_json_to_measurement(json_data: json):
 
 #%%
 # DATE RANGE
-date_range = DateTimeRange("2013-07-16T13:50:30.000+0000","2013-12-31T00:00:00.000+0000")
+date_range = DateTimeRange("2015-03-23T11:52:30.000+0000",
+                           "2016-01-01T00:00:00.000+0000",)
 date_range = [value for value in date_range.range(dt.timedelta(hours=1))]
 
 
@@ -122,11 +123,13 @@ date_range = [value for value in date_range.range(dt.timedelta(hours=1))]
 #   TODO: Progress bar
 def get_data_in_range(date_range,url=data_url):
     manager = MySQLStationManager("Aurora")
-    for i in tqdm.trange(len(date_range)-1):
+    for i in tqdm.tqdm(range(len(date_range)-1)):
         sdate = date_range[i]
-        print("Saving "+str(sdate))
         edate = date_range[i+1]
-        manager.insert_measurements(get_data_of_day(url, sdate, edate))
+        try:
+            manager.insert_measurements(get_data_of_day(url, sdate, edate))
+        except mysql.connector.errors.IntegrityError:
+            print("Already in the DB")
 
 # %%
 get_data_in_range(date_range)

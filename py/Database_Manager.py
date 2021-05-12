@@ -40,9 +40,9 @@ class MySQLStationManager:
                     obs.count,
                     obs.station.name
                 ))
-            print("Data inserted.")
+            # print("Data inserted.")
             cursor.close()
-        except mysql.connector.IntegrityError:
+        except mysql.connector.errors.IntegrityError:
             pass
          
     def insert_stations(self, stations: List[BluetoothStation]):
