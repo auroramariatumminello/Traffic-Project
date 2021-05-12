@@ -114,14 +114,14 @@ def from_json_to_measurement(json_data: json):
 
 #%%
 # DATE RANGE
-date_range = DateTimeRange("2015-03-23T11:52:30.000+0000",
+date_range = DateTimeRange("2015-10-19T14:40:0.000+0000",
                            "2016-01-01T00:00:00.000+0000",)
 date_range = [value for value in date_range.range(dt.timedelta(hours=1))]
 
 
 # %%
 #   TODO: Progress bar
-def get_data_in_range(date_range,url=data_url):
+def get_data_in_range(date_range,url=data_url): 
     manager = MySQLStationManager("Aurora")
     for i in tqdm.tqdm(range(len(date_range)-1)):
         sdate = date_range[i]
