@@ -1,6 +1,7 @@
 # %%
 # Libraries
 import datetime as dt
+import datetimerange
 import pandas as pd
 import requests
 import json
@@ -9,6 +10,7 @@ import os.path
 import time
 from datetimerange import DateTimeRange
 import pytz
+import tqdm
 
 # Importing scripts with objects
 from BluetoothStation import *
@@ -35,6 +37,7 @@ def get_stations_details(url: str = "https://mobility.api.opendatahub.bz.it/v2/f
                                                for station in stations if 'scoordinate' not in station.keys()]
 
     return bluetooth_stations
+
 # %%
 # Inserting the requested stations inside the station table
 # manager.insert_stations(get_stations_details())
@@ -97,6 +100,7 @@ def from_json_to_list(json_data: json):
                  element['sname']]
             result.append(m)
     return result
+
 # Returns a list of Measurement objects from json already imported
 def from_json_to_measurement(json_data: json):
     result = []
@@ -109,17 +113,10 @@ def from_json_to_measurement(json_data: json):
     return result
 
 #%%
-# DATE RANGES
+# DATE RANGE
+date_range = DateTimeRange("2013-07-16T13:50:30.000+0000","2013-12-31T00:00:00.000+0000")
+date_range = [value for value in date_range.range(dt.timedelta(hours=1))]
 
-# Date range from 01-01-2013 to 26-11-2019 (in days)
-old_date_range = DateTimeRange("2018-01-01T00:00:00.000+0000",
-                               "2019-11-26T00:00:00.000+0000")
-old_date_range = [value for value in old_date_range.range(dt.timedelta(hours=1))]
-
-# Datetime range from 26-11-2019 00:00:00 to nowadays (in hours)
-new_date_range = DateTimeRange("2019-11-26T00:00:00.000+0000",
-                               "2020-01-01T00:00:00.000+0000")
-new_date_range = [value for value in new_date_range.range(dt.timedelta(hours=1))]
 
 # %%
 #   TODO: Progress bar
@@ -131,19 +128,6 @@ def get_data_in_range(date_range,url=data_url):
         edate = date_range[i+1]
         manager.insert_measurements(get_data_of_day(url, sdate, edate))
 
-#%%
-res = get_data_of_day(data_url, old_date_range[-2], old_date_range[-1])
 # %%
-res
-# %%
-manager.insert_measurements(res)
-# %%
-import tqdm
-for i in tqdm.trange(len(res)):
-    if res[i].station.name=='siemens':
-        print([res[i].count])
-    
-old_date_range[8]
-# %%
-get_data_in_range(old_date_range)
+get_data_in_range(date_range)
 # %%
