@@ -1,8 +1,11 @@
 import json
+from logging import debug
 import os
 import mysql.connector
 from datetime import datetime
 from typing import Optional, List
+
+from mysql.connector.errors import InterfaceError
 from BluetoothStation import *
 
 class MySQLStationManager:
@@ -101,23 +104,28 @@ class MySQLStationManager:
     
 #%%
 import sshtunnel
+import paramiko
 #%%
 class MySQLStationManagerAWS:
     
     def __init__(self):
-        key = open('../db/BigDataProject.pem').readlines()
-        with sshtunnel.SSHTunnelForwarder(('ec2-35-156-254-73.eu-central-1.compute.amazonaws.com'),
-                                          ssh_username='ubuntu',
-                                          ssh_pkey=key,
-                                          remote_bind_address=('root', 3306)) as tunnel:
-            self.connection = mysql.connector.connect(
-                host="127.0.0.1",
-                user="root",
-                password="BigData",
-                port=3306,
-                database="bluetoothstations",
-                auth_plugin='mysql_native_password')
-
+        try:
+            with sshtunnel.SSHTunnelForwarder(('ec2-35-156-254-73.eu-central-1.compute.amazonaws.com',22),
+                                            ssh_username='ubuntu',
+                                            ssh_password=None,
+                                            ssh_pkey='G:/Il mio Drive/First Year/Big Data Technologies/Traffic Project/db/BigDataProject.pem',
+                                            remote_bind_address=('ip-172-31-41-152.eu-central-1.compute.internal', 3306),) as tunnel:
+                self.connection = mysql.connector.connect(
+                    host="127.0.0.1",
+                    user="root",
+                    password="BigData",
+                    port=tunnel.local_bind_port,
+                    database="bluetoothstations",
+                    auth_plugin='mysql_native_password')
+                print("Connected successfully.")
+        except InterfaceError:
+            print("Lost connection to MySQL server")
+    
     def disconnect(self):
         self.connection.close()
 
@@ -191,6 +199,5 @@ class MySQLStationManagerAWS:
         print("Finished.")
         cursor.close()
         return stations
-
 #%%
 MySQLStationManagerAWS()

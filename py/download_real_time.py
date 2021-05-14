@@ -53,7 +53,6 @@ def from_json_to_list(json_data: json):
 
 #%%
 # %%
-#   TODO: Progress bar
 def get_data_in_range(date_range,url=data_url):
     db = MySQLStationManager("Aurora")
     for i in tqdm.trange(len(date_range)-1):
