@@ -105,26 +105,27 @@ class MySQLStationManager:
 #%%
 import sshtunnel
 import paramiko
+import time
+import os
+import subprocess
 #%%
 class MySQLStationManagerAWS:
     
     def __init__(self):
-        try:
-            with sshtunnel.SSHTunnelForwarder(('ec2-35-156-254-73.eu-central-1.compute.amazonaws.com',22),
-                                            ssh_username='ubuntu',
-                                            ssh_password=None,
-                                            ssh_pkey='G:/Il mio Drive/First Year/Big Data Technologies/Traffic Project/db/BigDataProject.pem',
-                                            remote_bind_address=('ip-172-31-41-152.eu-central-1.compute.internal', 3306),) as tunnel:
-                self.connection = mysql.connector.connect(
-                    host="127.0.0.1",
-                    user="root",
-                    password="BigData",
-                    port=tunnel.local_bind_port,
-                    database="bluetoothstations",
-                    auth_plugin='mysql_native_password')
-                print("Connected successfully.")
-        except InterfaceError:
-            print("Lost connection to MySQL server")
+        with sshtunnel.SSHTunnelForwarder(('ec2-35-156-254-73.eu-central-1.compute.amazonaws.com',22),
+                                        ssh_username='ubuntu',
+                                        ssh_pkey='G:/Il mio Drive/First Year/Big Data Technologies/Traffic Project/db/BigDataProject.pem',
+                                        remote_bind_address=('172.31.41.152', 3306),) as tunnel:
+            time.sleep(1)
+            self.connection = mysql.connector.connect(
+                host="127.0.0.1",
+                user="root",
+                password="BigData",
+                port=tunnel.local_bind_port,
+                database="bluetoothstations",
+                auth_plugin='mysql_native_password')
+            print("Connected successfully.")
+
     
     def disconnect(self):
         self.connection.close()
