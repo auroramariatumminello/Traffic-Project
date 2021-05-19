@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Optional, List
 
 from mysql.connector.errors import InterfaceError
-from BluetoothStation import *
+from BluetoothStation import BluetoothStation, Measurement, Position
 
 class MySQLStationManager:
     
@@ -199,10 +199,28 @@ class MySQLStationManagerAWS:
         cursor.close()
         return measurements
     
+    def filter_measurements(self,filter='WHERE timestamp LIKE "2020-01-%";'):
+        cursor = self.connection.cursor()
+        query = 'SELECT * from bluetoothstations.measurement WHERE timestamp LIKE "2020-01-02";'
+        cursor.execute(query)
+        measurements = []
+        for timestamp, count, station in cursor:
+            new_m = Measurement(
+                timestamp,
+                count,
+                station
+            )
+            print(new_m)
+            measurements.append(new_m)
+        print("Finished.")
+        print([x.to_list() for x in measurements])
+        cursor.close()
+        return measurements
+    
     # List of all BluetoothStations in the database
     def list_all_stations(self):
         cursor = self.connection.cursor()
-        query = "SELECT * from bluetoothstations.station"
+        query = 'SELECT * from bluetoothstations.station'
         cursor.execute(query)
         stations = []
         for name, latitude, longitude in cursor:
@@ -211,8 +229,9 @@ class MySQLStationManagerAWS:
                 Position(latitude, longitude)
             ))
         print("Finished.")
+        print([x.to_list() for x in stations])
         cursor.close()
         return stations
 #%%
 manager = MySQLStationManagerAWS()
-manager.list_all_stations()
+manager.filter_measurements()
