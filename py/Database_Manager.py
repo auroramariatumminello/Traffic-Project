@@ -129,7 +129,7 @@ class MySQLStationManagerAWS:
             user='root',
             passwd='MyNewPass',
             host='127.0.0.1', 
-            port=3306,
+            port=self.server.local_bind_port,
             db='bluetoothstations')
         print("Connection successfully created.")
         return self.connection
@@ -199,21 +199,12 @@ class MySQLStationManagerAWS:
         cursor.close()
         return measurements
     
-    def filter_measurements(self,filter='WHERE timestamp LIKE "2020-01-%";'):
+    def filter_measurements(self, query):
         cursor = self.connection.cursor()
-        query = 'SELECT * from bluetoothstations.measurement WHERE timestamp LIKE "2020-01-02";'
         cursor.execute(query)
-        measurements = []
-        for timestamp, count, station in cursor:
-            new_m = Measurement(
-                timestamp,
-                count,
-                station
-            )
-            print(new_m)
-            measurements.append(new_m)
+        measurements = cursor.fetchall()
         print("Finished.")
-        print([x.to_list() for x in measurements])
+        print(measurements)
         cursor.close()
         return measurements
     
@@ -232,6 +223,154 @@ class MySQLStationManagerAWS:
         print([x.to_list() for x in stations])
         cursor.close()
         return stations
+    
+    def get_latest_datetime(self):
+        query = 'SELECT MAX(timestamp) FROM bluetoothstations.measurement;';
+        cursor = self.connection.cursor()
+        cursor.execute(query)
+        return cursor.fetchall()[0][0]
+
+    def insertion_testing(self, observations: List[Measurement]):
+        # If the station is in BluetoothStation table
+        cursor = self.connection.cursor()
+        query = "INSERT IGNORE into bluetoothstations.temp (timestamp, count, station) VALUES (%s, %s, %s)"
+        try:
+            for obs in observations:
+                cursor.execute(query, (
+                    obs.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+                    obs.count,
+                    obs.station.name
+                ))
+            print("Inserted "+len(observations)+" measurements.")
+            cursor.close()
+        except mysql.connector.errors.IntegrityError:
+            print("Ups")
+            
 #%%
-manager = MySQLStationManagerAWS()
-manager.filter_measurements()
+import pandas as pd
+#SQL
+import mysql.connector 
+#%%
+class MySQLStationManagerRDS:
+    
+    def __init__(self):
+        self.connection = mysql.connector.connect(
+            host="http://traffic-db.ce2ieg6xrefy.us-east-2.rds.amazonaws.com",
+            user="marshall",
+            passwd="happyslashgiving")
+        print("Connection successfully created.")
+            
+    def get_tables(self):
+        mycursor = self.connection.cursor()
+        mycursor.execute("Show tables;")
+        myresult = mycursor.fetchall()
+        return myresult
+                
+    def disconnect(self):
+        self.connection.close()
+
+    # Need to update: ask whether the station is already in the station table
+    def insert_measurements(self, observations: List[Measurement]):
+        # If the station is in BluetoothStation table
+        cursor = self.connection.cursor()
+        query = "INSERT IGNORE into bluetoothstations.measurement (timestamp, count, station) VALUES (%s, %s, %s)"
+        try:
+            for obs in observations:
+                cursor.execute(query, (
+                    obs.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+                    obs.count,
+                    obs.station.name
+                ))
+            # print("Data inserted.")
+            cursor.close()
+        except mysql.connector.errors.IntegrityError:
+            pass
+         
+    def insert_stations(self, stations: List[BluetoothStation]):
+        cursor = self.connection.cursor()
+        query = "INSERT into bluetoothstations.station (name, latitude, longitude) VALUES (%s, %s, %s)"
+
+        for station in stations:
+            if station.coords.lat == None or station.coords.lon == None:
+                cursor.execute(
+                    query, (
+                    station.name,
+                    None,
+                    None))
+            else:
+                cursor.execute(query, (
+                    station.name,
+                    station.coords.lat,
+                    station.coords.lon
+                ))
+        # print("Data inserted.")
+        cursor.close()
+
+    # Generalize by inserting optional parameter about the station(s)
+    def list_all_measurement(self):
+        cursor = self.connection.cursor()
+        query = "SELECT * from bluetoothstations.measurement"
+        cursor.execute(query)
+        print("Got all measurements.")
+        measurements = []
+        for timestamp, count, station in cursor:
+            measurements.append(Measurement(
+                timestamp,
+                count,
+                station
+            ))
+        print("Finished.")
+        cursor.close()
+        return measurements
+    
+    def filter_measurements(self, query):
+        cursor = self.connection.cursor()
+        cursor.execute(query)
+        measurements = cursor.fetchall()
+        print("Finished.")
+        print(measurements)
+        cursor.close()
+        return measurements
+    
+    # List of all BluetoothStations in the database
+    def list_all_stations(self):
+        cursor = self.connection.cursor()
+        query = 'SELECT * from bluetoothstations.station'
+        cursor.execute(query)
+        stations = []
+        for name, latitude, longitude in cursor:
+            stations.append(BluetoothStation(
+                name,
+                Position(latitude, longitude)
+            ))
+        print("Finished.")
+        print([x.to_list() for x in stations])
+        cursor.close()
+        return stations
+    
+    def get_latest_datetime(self):
+        query = 'SELECT MAX(timestamp) FROM bluetoothstations.measurement;';
+        cursor = self.connection.cursor()
+        cursor.execute(query)
+        return cursor.fetchall()[0][0]
+
+    def insertion_testing(self, observations: List[Measurement]):
+        # If the station is in BluetoothStation table
+        cursor = self.connection.cursor()
+        query = "INSERT IGNORE into bluetoothstations.temp (timestamp, count, station) VALUES (%s, %s, %s)"
+        try:
+            for obs in observations:
+                cursor.execute(query, (
+                    obs.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+                    obs.count,
+                    obs.station.name
+                ))
+            print("Inserted "+len(observations)+" measurements.")
+            cursor.close()
+        except mysql.connector.errors.IntegrityError:
+            print("Ups")
+            
+#%%
+MySQLStationManagerRDS()
+#print(MySQLStationManagerAWS().filter_measurements(query))
+#%%

@@ -10,6 +10,7 @@ import time
 import pytz
 import tqdm
 from datetimerange import DateTimeRange
+from Database_Manager import *
 # %%
 # URL to request vehicle detection in Bluetooth Stations
 data_url = "https://mobility.api.opendatahub.bz.it/v2/flat%2Cnode/BluetoothStation/%2A/{}/{}?limit=-1&distinct=true&timezone=UTC"
@@ -33,13 +34,20 @@ def get_data_of_day(url, sdate, edate, filename=None):
         
         day_data = req.json()["data"]
         results = from_json_to_list(day_data)
+        headers = ["Timestamp", "Count", "Station"]
+        df = pd.DataFrame(results, columns=headers).groupby(['Timestamp','Station'],as_index=False).sum()
+        
+        # From dataframe to Measurements list
+        results = [Measurement(df.iloc[i, 0],
+                               int(df.iloc[i, 2]),
+                               BluetoothStation(df.iloc[i, 1])) for i in range(len(df))]
     except ValueError:
         # Possible error of gateway, retry after 1 minute
         print("Gateway Time-out error")
         time.sleep(60)
         get_data_of_day(url, sdate, edate, filename)
 
-
+# Convert json data to list with timestamp, count and station
 def from_json_to_list(json_data: json):
     result = []
     for element in json_data:
@@ -51,17 +59,30 @@ def from_json_to_list(json_data: json):
     return result
 
 
-#%%
 # %%
-def get_data_in_range(date_range,url=data_url):
-    db = MySQLStationManager("Aurora")
+def get_missing_data(url=data_url):
+    # Manager to communicate with MySQL on EC2
+    db = MySQLStationManagerAWS()
+    
+    # Datetime of the last data gathered
+    last_date = db.get_latest_datetime()
+    print("Last time you downloaded: "+str(last_date))
+    
+    # Creating date range from last time we updated the db till now
+    date_range = DateTimeRange(last_date,
+                               dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    date_range = [value for value in date_range.range(dt.timedelta(hours=1))]
+    
+    # Get data for each hour
     for i in tqdm.trange(len(date_range)-1):
-        sdate = date_range[i]
-        print("Saving "+str(sdate))
-        edate = date_range[i+1]
-        for row in get_data_of_day(url, sdate, edate):
-            db.putItem(row)
+        try:
+            sdate = date_range[i]
+            # print("Saving "+str(sdate))
+            edate = date_range[i+1]
+            db.insert_measurements(get_data_of_day(url, sdate, edate))
+        except:
+            print("I arrived till "+str(sdate))
+            break
 
 # %%
-get_data_in_range(date_range)
-# %%
+get_missing_data()

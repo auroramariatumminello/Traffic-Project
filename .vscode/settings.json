@@ -1,3 +1,4 @@
 {
-    "python.pythonPath": "C:\\Users\\auror\\AppData\\Local\\Microsoft\\WindowsApps\\python.exe"
+    "python.pythonPath": "C:\\Users\\auror\\AppData\\Local\\Microsoft\\WindowsApps\\python3.9.exe",
+    "git.ignoreLimitWarning": true
 }
