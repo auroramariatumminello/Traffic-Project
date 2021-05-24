@@ -1,0 +1,3 @@
+SET SQL_SAFE_UPDATES=0;
+DELETE FROM bluetoothstations.measurement;
+SET SQL_SAFE_UPDATES=1;
