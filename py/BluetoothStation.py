@@ -36,10 +36,10 @@ class Measurement:
         self.station = station
     
     def to_list(self):
-        try:
-            return [self.timestamp,self.count,self.station.name]
-        except:
-            return []
+        return [self.timestamp,self.count,self.station.name]
+        
+    def get_timestamp(self):
+        return self.timestamp
     
     def from_list(self, db_list:List[str]):
         return Measurement(db_list[0],db_list[1],db_list[2])
