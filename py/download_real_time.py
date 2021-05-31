@@ -97,4 +97,6 @@ def get_missing_data(url=data_url, data_path = '../data/latest_data.csv'):
     os.remove(data_path)
     
 # %%
-get_missing_data()
+while True:
+    get_missing_data()
+    time.sleep(60*10)
