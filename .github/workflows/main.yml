@@ -2,7 +2,7 @@ name: automate-real-data-download
 
 on:
   schedule:
-    - cron: '*/30 * * * *' # runs every hour
+    - cron: '*/2 * * * *' # runs every hour
 
 jobs:
   build:
