@@ -213,7 +213,6 @@ class MySQLStationManagerAWS:
         df = pd.read_csv(data_path)
         if df.empty:
             print("No data available yet.")
-            sys.exit(0)
         else:
             cursor = self.connection.cursor()
             for _,row in tqdm(df.iterrows(), total=df.shape[0]):

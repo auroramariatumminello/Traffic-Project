@@ -64,7 +64,7 @@ def from_json_to_list(json_data: json):
 
 
 # %%
-def get_missing_data(url=data_url, data_path = 'data/latest_data.csv'):
+def get_missing_data(url=data_url, data_path = '../data/latest_data.csv'):
     # Manager to communicate with MySQL on EC2
     db = MySQLStationManagerAWS()
     
@@ -86,7 +86,7 @@ def get_missing_data(url=data_url, data_path = 'data/latest_data.csv'):
         msmt = get_data_of_day(url, sdate, edate)
         # saves data in a temporary csv
         if i==0:
-            msmt.to_csv(data_path, header=True, index=False)
+            msmt.to_csv(data_path, mode = 'w', header=True, index=False)
         else:
             msmt.to_csv(data_path, mode='a', header=False, index=False) 
 
