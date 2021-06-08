@@ -104,8 +104,6 @@ python-telegram-bot==10.0.2
 pytoml==0.1.21
 pytz==2020.5
 pyvis==0.1.8.2
-pywin32==300
-pywin32-ctypes==0.2.0
 pyzmq==20.0.0
 regex==2020.11.13
 requests==2.22.0
@@ -137,4 +135,3 @@ virtualenv==20.4.3
 wcwidth==0.2.5
 webencodings==0.5.1
 wrapt==1.12.1
-zope.interface==5.2.0
