@@ -1,1 +1,1 @@
-python download_real_time.py
+..\venv\Scripts\python.exe download_real_time.py
