@@ -75,6 +75,9 @@ def get_missing_data(url=data_url, data_path = './data/latest_data.csv'):
         
         # Downloading data and saving it in pickle format
         msmt = get_data_of_day(url, sdate, edate)
+        
+        print("pwd: "+os.getcwd())
+        print("list: "+os.listdir())
         # saves data in a temporary csv
         if i==0:
             msmt.to_csv(data_path, mode = 'w', header=True, index=False)
