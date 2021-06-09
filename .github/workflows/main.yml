@@ -1,9 +1,9 @@
 name: automate-real-data-download
 
 on:
-  schedule:
-    - cron: '*/2 * * * *' # runs every hour
-
+  # schedule:
+  #   - cron: '*/2 * * * *' # runs every hour
+  workflow_dispatch:
 jobs:
   build:
     runs-on: ubuntu-latest
