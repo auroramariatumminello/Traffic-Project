@@ -43,13 +43,6 @@ def get_data_of_day(url, sdate, edate, filename=None):
         print("Gateway Time-out error")
         time.sleep(60)
         get_data_of_day(url, sdate, edate, filename)
-
-def convert_df_to_list_of_measurements(df):
-    # From dataframe to Measurements list
-    results = [Measurement(df.iloc[i, 0],
-                            int(df.iloc[i, 2]),
-                            BluetoothStation(df.iloc[i, 1])) for i in range(len(df))]
-    return results
     
 # Convert json data to list with timestamp, count and station
 def from_json_to_list(json_data: json):
@@ -61,10 +54,8 @@ def from_json_to_list(json_data: json):
                  element['sname']]
             result.append(m)
     return result
-
-
 # %%
-def get_missing_data(url=data_url, data_path = '../data/latest_data.csv'):
+def get_missing_data(url=data_url, data_path = 'data/latest_data.csv'):
     # Manager to communicate with MySQL on EC2
     db = MySQLStationManagerAWS()
     
