@@ -69,7 +69,7 @@ def get_missing_data(url=data_url, data_path = 'data/latest_data.csv'):
     date_range = [value for value in date_range.range(dt.timedelta(hours=1))]
     print("Downloading data...")
     print("pwd: "+os.getcwd())
-    print("list: "+str(os.listdir()))
+    print("list: "+str(os.listdir("data/")))
     # Get data for each hour
     for i in tqdm.trange(len(date_range)-1):
         sdate = date_range[i]
@@ -84,6 +84,8 @@ def get_missing_data(url=data_url, data_path = 'data/latest_data.csv'):
         else:
             msmt.to_csv(data_path, mode='a', header=False, index=False) 
 
+    print("\nDOES LATEST DATA EXIST? "+str(os.path.exists("data/latest_data.csv")))
+    print("list: "+str(os.listdir()))
     # Inserting data from csv inside the database 
     print("Inserting data inside the database...")
     db.insert_csv_in_db(data_path)
@@ -91,6 +93,4 @@ def get_missing_data(url=data_url, data_path = 'data/latest_data.csv'):
     os.remove(data_path)
     
 # %%
-while True:
-    get_missing_data()
-    time.sleep(60*10)
+get_missing_data()
