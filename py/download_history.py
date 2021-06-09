@@ -17,7 +17,7 @@ from BluetoothStation import *
 from Database_Manager import *
 #%%
 # Creating a MySQL Database Manager
-manager = MySQLStationManager("Aurora")
+manager = MySQLStationManagerAWS()
 
 # %%
 
@@ -40,7 +40,7 @@ def get_stations_details(url: str = "https://mobility.api.opendatahub.bz.it/v2/f
 
 # %%
 # Inserting the requested stations inside the station table
-# manager.insert_stations(get_stations_details())
+manager.insert_stations(get_stations_details())
 # %%
 
 # URL to request vehicle detection in Bluetooth Stations
