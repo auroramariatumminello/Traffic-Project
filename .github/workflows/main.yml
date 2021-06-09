@@ -29,4 +29,4 @@ jobs:
           pip install -r requirements.txt
           
       - name: execute py script # run sj-gobierno.py to get the latest data
-        run: python ./py/download_real_time.py
+        run: python py/download_real_time.py
