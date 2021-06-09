@@ -1,5 +1,5 @@
 # Combine the strings to generate the text
-file_text = "some content hereeeeeeeeeeeeee"
+file_text = "some content hereeeeeeeeeeeeee 53"
 print (file_text)
 
 # Write the text to the file
@@ -10,7 +10,7 @@ f_w.close()
 
 # Open the file to read and print the text
 print("\n--------------------------------------\nThe text of the file is:")
-f_r = open("test.txt", "r")
+f_r = open("data/test.txt", "r")
 print(f_r.read())
 f_r.close()
 
