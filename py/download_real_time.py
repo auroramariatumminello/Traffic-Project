@@ -69,7 +69,7 @@ def get_missing_data(url=data_url, data_path = 'data/latest_data.csv'):
     date_range = [value for value in date_range.range(dt.timedelta(hours=1))]
     print("Downloading data...")
     print("pwd: "+os.getcwd())
-    print("list: "+os.listdir())
+    print("list: "+str(os.listdir()))
     # Get data for each hour
     for i in tqdm.trange(len(date_range)-1):
         sdate = date_range[i]
