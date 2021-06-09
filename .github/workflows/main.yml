@@ -3,13 +3,13 @@ name: automate-real-data-download
 on:
   # schedule:
   #   - cron: '*/2 * * * *' # runs every hour
-  # workflow_dispatch:
-    push:
-      branches: main
-      paths-ignore:
-        - '*'
-        - '!.github/workflows/main.yml'
-        - '!py/download_real_time.py'
+  workflow_dispatch:
+  push:
+    branches: main
+    paths-ignore:
+      - '*'
+      - '!.github/workflows/main.yml'
+      - '!py/download_real_time.py'
 jobs:
   build:
     runs-on: ubuntu-latest
