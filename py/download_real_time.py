@@ -55,7 +55,7 @@ def from_json_to_list(json_data: json):
             result.append(m)
     return result
 # %%
-def get_missing_data(url=data_url, data_path = 'data/latest_data.csv'):
+def get_missing_data(url=data_url, data_path = './data/latest_data.csv'):
     # Manager to communicate with MySQL on EC2
     db = MySQLStationManagerAWS()
     
