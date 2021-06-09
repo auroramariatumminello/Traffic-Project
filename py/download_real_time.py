@@ -68,6 +68,8 @@ def get_missing_data(url=data_url, data_path = 'data/latest_data.csv'):
                                dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     date_range = [value for value in date_range.range(dt.timedelta(hours=1))]
     print("Downloading data...")
+    print("pwd: "+os.getcwd())
+    print("list: "+os.listdir())
     # Get data for each hour
     for i in tqdm.trange(len(date_range)-1):
         sdate = date_range[i]
@@ -76,8 +78,6 @@ def get_missing_data(url=data_url, data_path = 'data/latest_data.csv'):
         # Downloading data and saving it in pickle format
         msmt = get_data_of_day(url, sdate, edate)
         
-        print("pwd: "+os.getcwd())
-        print("list: "+os.listdir())
         # saves data in a temporary csv
         if i==0:
             msmt.to_csv(data_path, mode = 'w', header=True, index=False)
