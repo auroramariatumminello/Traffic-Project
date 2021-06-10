@@ -206,7 +206,10 @@ class MySQLStationManagerAWS:
         return cursor.fetchall()[0][0]
 
     def insert_csv_in_db(self, data_path):
-        df = pd.read_csv(data_path)
+        try:
+            df = pd.read_csv(data_path)
+        except pandas.errors.EmptyDataError:
+            print("No data yet")
         if df.empty:
             print("No data available yet.")
         else:
