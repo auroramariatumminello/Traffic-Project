@@ -84,8 +84,6 @@ def get_missing_data(url=data_url, data_path = 'data/latest_data.csv'):
         else:
             msmt.to_csv(data_path, mode='a', header=False, index=False) 
 
-    print("\nDOES LATEST DATA EXIST? "+str(os.path.exists("data/latest_data.csv")))
-    print("list: "+str(os.listdir("data/")))
     # Inserting data from csv inside the database 
     print("Inserting data inside the database...")
     db.insert_csv_in_db(data_path)

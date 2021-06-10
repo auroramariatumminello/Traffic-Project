@@ -221,3 +221,5 @@ class MySQLStationManagerAWS:
                 # the connection is not auto committed by default, so we must commit to save our changes
             self.connection.commit()
             cursor.close()
+
+    
