@@ -1,0 +1,163 @@
+---
+output: 
+  flexdashboard::flex_dashboard:
+    theme: yeti
+    css: styles.css
+runtime: shiny
+---
+
+
+```{r setup, include=FALSE}
+library("shinythemes")
+library("flexdashboard")
+library("DBI")
+library("dplyr")
+library("ggplot2")
+library("shinyWidgets")
+library("shiny")
+library("plotly")
+library("scales")
+library("DT")
+library("leaflet")
+library("leaflet.extras")
+library("maps")
+options(scipen=999)
+source("mysql_connection.R")
+library("RMariaDB")
+# Establish connectiong to Athena
+con <- dbconnect()
+```
+
+
+Page 1
+=====================================  
+
+Column {.sidebar}
+-------------------------------------
+```{r}
+# List of stations
+stations = c(dbGetQuery(con, paste0(
+      "SELECT name
+       FROM bluetoothstations.station"
+    )))
+
+# Search bar for the stations
+selectInput(inputId = "station", 
+            label = "Select a station",
+            choices = c("All",stations),
+            width = "100%")
+```
+
+
+Column {data-width=600}
+-------------------------------------
+    
+### Stations
+
+```{r}
+# Creating the map that shows the selected station
+renderLeaflet({
+  # Show all stations
+  if(input$station[1]!="All"){
+    df = dbGetQuery(con, paste0(
+      "SELECT *
+     FROM bluetoothstations.station
+     WHERE name ='",input$station[1],"'"
+    ))
+    # Show the selected station
+  }else{
+    df = dbGetQuery(con, paste0(
+      "SELECT *
+     FROM bluetoothstations.station"))
+  }
+  # Creating the map, with lat and lon set to Bolzen
+  leaflet(df) %>% 
+    setView(lng = 11.2, lat = 46.40, zoom =9)  %>%
+    addTiles() %>% 
+    addMarkers(data = df, 
+               lat = ~ latitude,
+               lng = ~ longitude, 
+               popup = ~as.character(name), 
+               label = ~as.character(paste0("Name: ", sep = " ", name)))
+})
+```
+   
+Column {data-width=450}
+-------------------------------------
+   
+### Traffic per hour
+
+```{r}
+# Plot the traffic of the specific station
+if(input$station[1]!="All"){
+  traffic_s = dbGetQuery(con,paste0("
+                     SELECT *
+                     FROM bluetoothstations.measurement
+                     WHERE station = ",input$station[1]))
+  
+# Plot the traffic of the overall stations
+}else{
+  
+}
+```
+
+
+### Total Taxi Mileage per Day 
+    
+```{r}
+
+renderPlotly({
+  
+mileage <- dbGetQuery(con, paste0("select day_diff, sum(trip_distance) as total_mil_per_day
+from (select trip_distance, date_diff('day', timestamp '", input$pickup_date[1] , " 00:00:00', pickup_datetime) as day_diff from my_database.nyc_taxi  where vendor_id like '", input$vendor_id ,"' and pickup_datetime between timestamp '", input$pickup_date[1] , " 00:00:00' and timestamp '", input$pickup_date[2]," 00:00:00' and passenger_count between ", input$passengers[1], " and ", input$passengers[2], ") group by day_diff"))
+
+pl <- ggplot(mileage, aes(x=day_diff, y=total_mil_per_day))+geom_line(colour="#0066CC")
+ggplotly(pl)
+
+})
+```
+
+Page 2 {data-orientation=rows}
+=====================================    
+
+Row {data-height = 200}
+-------------------------------------
+```{r}
+dateRangeInput(inputId = "pickup_date", 
+  label = 'Date:', 
+  start = "2012-01-01", 
+  end = "2012-03-31", 
+  min = "2012-01-01",
+  max = "2013-12-31")
+
+noUiSliderInput(
+    inputId = "passengers",
+    min = 0, max = 10,
+    value = c(3,6),
+    step = 1
+)
+```
+
+   
+Row {data-height=600}
+-------------------------------------
+
+### Map Pick Up Location
+
+```{r}
+renderLeaflet({
+y <- dbGetQuery(con, paste0("select pickup_longitude, pickup_latitude, count(*) as count
+from (select round(pickup_longitude, 3) as pickup_longitude, round(pickup_latitude, 3) as pickup_latitude from my_database.nyc_taxi where vendor_id like '", input$vendor_id, "' and pickup_datetime between timestamp '", input$pickup_date[1], " 00:00:00' and timestamp '", input$pickup_date[2], " 00:00:00' and passenger_count between ", input$passengers[1], " and ", input$passengers[2], ") group by pickup_longitude, pickup_latitude"))
+
+ysub <- subset(y, y$count > 1 & y$pickup_longitude != 0 & y$pickup_latitude != 0)
+
+
+leaflet(ysub) %>%  # Add default OpenStreetMap map tiles
+  setView(-73.99,40.745, 14) %>%
+  addProviderTiles(providers$CartoDB.DarkMatter) %>%
+  #addMarkers(lng=ysub$pickup_longitude, lat=ysub$pickup_latitude, popup="The birthplace of R")
+  addHeatmap(lng = ~pickup_longitude, lat = ~pickup_latitude, intensity = ~(count/max(ysub$count)))
+}
+)
+
+```
