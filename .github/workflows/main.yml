@@ -2,7 +2,7 @@ name: automate-real-data-download
 
 on:
   # schedule:
-  #   - cron: '*/2 * * * *' # runs every hour
+  #   - cron: '*/2 * * * *' # runs every 30 min
   workflow_dispatch:
   push:
     branches: main
@@ -29,4 +29,4 @@ jobs:
           pip install -r requirements.txt
           
       - name: execute py script # run sj-gobierno.py to get the latest data
-        run: python py/test.py
+        run: python py/download_real_time.py
