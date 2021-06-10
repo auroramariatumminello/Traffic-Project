@@ -1,0 +1,21 @@
+.form-group.shiny-input-container {
+  margin-top: 65px;
+}
+
+.navbar-logo {
+  width: 24%;
+}
+
+.nav.navbar-nav.navbar-left {
+  position: relative;
+  right: 480px;
+}
+
+.navbar-logo:after {
+  content: "Bear in Mind";
+  font-size: 14px;
+  font-weight: bold;
+  font-family: "Verdana";
+  position: relative;
+  right: 10px;
+}
