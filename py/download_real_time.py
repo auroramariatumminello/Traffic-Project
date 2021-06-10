@@ -63,13 +63,14 @@ def get_missing_data(url=data_url, data_path = 'data/latest_data.csv'):
     last_date = db.get_latest_datetime()
     print("Last time you downloaded: "+str(last_date))
     
+    try:
     # Creating date range from last time we updated the db till now
     date_range = DateTimeRange(last_date+dt.timedelta(minutes=1),
                                dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     date_range = [value for value in date_range.range(dt.timedelta(hours=1))]
-    print("Downloading data...")
-    print("pwd: "+os.getcwd())
-    print("list: "+str(os.listdir()))
+    except:
+        print("Too early to download data.")
+        sys.exit(0)
     # Get data for each hour
     for i in tqdm.trange(len(date_range)-1):
         sdate = date_range[i]
