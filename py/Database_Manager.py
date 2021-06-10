@@ -1,12 +1,8 @@
 #%%
 import mysql.connector
-from typing import Optional, List
-import numpy as np
-import datetime as dt
+from typing import List
 import pandas as pd
 from tqdm import tqdm
-import sys
-from mysql.connector.errors import InterfaceError
 from BluetoothStation import BluetoothStation, Measurement, Position
 #%%
 class MySQLStationManager:

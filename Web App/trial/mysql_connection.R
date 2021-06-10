@@ -13,6 +13,3 @@ mydb <- RMySQL::dbConnect(
   dbname = "bluetoothstations",
   host = "traffic-db.ce2ieg6xrefy.us-east-2.rds.amazonaws.com"
 )
-library(tidyverse)
-
-dbListTables(mydb)
