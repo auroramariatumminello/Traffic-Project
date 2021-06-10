@@ -2,7 +2,7 @@ name: automate-real-data-download
 
 on:
   schedule:
-    - cron: '*/30 * * * *' # runs every 30 min
+    - cron: '*/60 * * * *' # runs every 30 min
   workflow_dispatch:
 jobs:
   build:
