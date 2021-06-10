@@ -208,17 +208,18 @@ class MySQLStationManagerAWS:
     def insert_csv_in_db(self, data_path):
         try:
             df = pd.read_csv(data_path)
+            if df.empty:
+                print("No data available yet.")
+            else:
+                cursor = self.connection.cursor()
+                for _,row in tqdm(df.iterrows(), total=df.shape[0]):
+                    sql = "INSERT INTO bluetoothstations.measurement VALUES (%s,%s,%s)"
+                    cursor.execute(sql, tuple(row))
+                    # the connection is not auto committed by default, so we must commit to save our changes
+                self.connection.commit()
+                cursor.close()
         except pd.errors.EmptyDataError:
             print("No data yet")
-        if df.empty:
-            print("No data available yet.")
-        else:
-            cursor = self.connection.cursor()
-            for _,row in tqdm(df.iterrows(), total=df.shape[0]):
-                sql = "INSERT INTO bluetoothstations.measurement VALUES (%s,%s,%s)"
-                cursor.execute(sql, tuple(row))
-                # the connection is not auto committed by default, so we must commit to save our changes
-            self.connection.commit()
-            cursor.close()
+        
 
     
