@@ -6,8 +6,8 @@ output:
 runtime: shiny
 ---
 
-
 ```{r setup, include=FALSE}
+# Libraries
 library("shinythemes")
 library("flexdashboard")
 library("DBI")
@@ -21,10 +21,11 @@ library("DT")
 library("leaflet")
 library("leaflet.extras")
 library("maps")
-options(scipen=999)
+
 source("mysql_connection.R")
 library("RMariaDB")
-# Establish connectiong to Athena
+
+# Establish connectiong to MySQL
 con <- dbconnect()
 ```
 
@@ -61,14 +62,14 @@ renderLeaflet({
   if(input$station[1]!="All"){
     df = dbGetQuery(con, paste0(
       "SELECT *
-     FROM bluetoothstations.station
-     WHERE name ='",input$station[1],"'"
+       FROM bluetoothstations.station
+       WHERE name ='",input$station[1],"'"
     ))
     # Show the selected station
   }else{
     df = dbGetQuery(con, paste0(
       "SELECT *
-     FROM bluetoothstations.station"))
+       FROM bluetoothstations.station"))
   }
   # Creating the map, with lat and lon set to Bolzen
   leaflet(df) %>% 
@@ -88,17 +89,22 @@ Column {data-width=450}
 ### Traffic per hour
 
 ```{r}
-# Plot the traffic of the specific station
-if(input$station[1]!="All"){
-  traffic_s = dbGetQuery(con,paste0("
-                     SELECT *
-                     FROM bluetoothstations.measurement
-                     WHERE station = ",input$station[1]))
-  
-# Plot the traffic of the overall stations
-}else{
-  
-}
+renderPlotly({
+  # Plot the traffic of the specific station
+  if(input$station[1]!="All"){
+    traffic_s = dbGetQuery(con,paste0("
+                                      SELECT time(timestamp) as time,count
+                                      FROM bluetoothstations.measurement as m
+                                      WHERE station = '",input$station[1],"'"))
+  # Plot the traffic of the overall stations
+  }else{
+    traffic_s = dbGetQuery(con,paste0("
+                                      SELECT time(timestamp) as time, SUM(count) as traffic
+                                      FROM bluetoothstations.measurement as m
+                                      GROUP BY time(timestamp);"))
+  }
+  plot_ly(data = traffic_s, x = ~time, y = ~traffic, mode = 'lines')
+})
 ```
 
 
