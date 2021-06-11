@@ -65,9 +65,9 @@ def get_missing_data(url=data_url, data_path = 'data/latest_data.csv'):
     
     try:
     # Creating date range from last time we updated the db till now
-    date_range = DateTimeRange(last_date+dt.timedelta(minutes=1),
-                               dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-    date_range = [value for value in date_range.range(dt.timedelta(hours=1))]
+        date_range = DateTimeRange(last_date+dt.timedelta(minutes=1),
+                                dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        date_range = [value for value in date_range.range(dt.timedelta(hours=1))]
     except:
         print("Too early to download data.")
         sys.exit(0)
