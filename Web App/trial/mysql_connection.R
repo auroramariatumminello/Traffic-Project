@@ -9,10 +9,12 @@ config <- config::get(file = "config.yml")
 dbconnect <- function(){ 
   mydb <- RMariaDB::dbConnect(
     RMariaDB::MariaDB(),
-    user = "marshall",
-    password = "happyslashgiving",
-    dbname = "bluetoothstations",
-    host = "traffic-db.ce2ieg6xrefy.us-east-2.rds.amazonaws.com"
+    user = config$db_user,
+    password = config$password,
+    dbname = config$dbname,
+    host = config$db_host
   )
   return(mydb)
 }
+
+dbconnect()

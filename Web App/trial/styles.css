@@ -2,9 +2,6 @@
   margin-top: 65px;
 }
 
-.navbar-logo {
-  width: 24%;
-}
 
 .nav.navbar-nav.navbar-left {
   position: relative;
@@ -12,10 +9,10 @@
 }
 
 .navbar-logo:after {
-  content: "Bear in Mind";
+  content: "Traffic in Bolzen";
   font-size: 14px;
   font-weight: bold;
-  font-family: "Verdana";
+  font-family: "Montserrat, sans-serif";
   position: relative;
   right: 10px;
 }

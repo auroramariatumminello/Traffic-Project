@@ -2,7 +2,7 @@
 output: 
   flexdashboard::flex_dashboard:
     theme: yeti
-    css: styles.css
+    # css: styles.css
 runtime: shiny
 ---
 
@@ -30,11 +30,14 @@ con <- dbconnect()
 ```
 
 
-Page 1
+Real time traffic
 =====================================  
 
-Column {.sidebar}
--------------------------------------
+
+
+Stations
+=====================================   
+
 ```{r}
 # List of stations
 stations = c(dbGetQuery(con, paste0(
@@ -48,7 +51,6 @@ selectInput(inputId = "station",
             choices = c("All",stations),
             width = "100%")
 ```
-
 
 Column {data-width=600}
 -------------------------------------
@@ -83,7 +85,7 @@ renderLeaflet({
 })
 ```
    
-Column {data-width=450}
+Column {data-width=600}
 -------------------------------------
    
 ### Traffic per hour
@@ -93,77 +95,67 @@ renderPlotly({
   # Plot the traffic of the specific station
   if(input$station[1]!="All"){
     traffic_s = dbGetQuery(con,paste0("
-                                      SELECT time(timestamp) as time,count
+                                      SELECT hour(timestamp) as time,AVG(count) as traffic
                                       FROM bluetoothstations.measurement as m
-                                      WHERE station = '",input$station[1],"'"))
+                                      WHERE station = '",input$station[1],"'
+                                      GROUP BY hour(timestamp)
+                                      ORDER BY time"))
   # Plot the traffic of the overall stations
   }else{
     traffic_s = dbGetQuery(con,paste0("
-                                      SELECT time(timestamp) as time, SUM(count) as traffic
+                                      SELECT hour(timestamp) as time,AVG(count) as traffic
                                       FROM bluetoothstations.measurement as m
-                                      GROUP BY time(timestamp);"))
+                                      GROUP BY hour(timestamp)
+                                      ORDER BY time;"))
   }
   plot_ly(data = traffic_s, x = ~time, y = ~traffic, mode = 'lines')
 })
 ```
 
+History {data-orientation=rows}
+=====================================    
 
-### Total Taxi Mileage per Day 
-    
+Row {data-height = 50}
+-------------------------------------
 ```{r}
+latest_data = "SELECT date(MAX(timestamp)) FROM bluetoothstations.station"
 
+dateRangeInput(inputId = "pickup_date", 
+  label = 'Date:', 
+  start = "2013-01-01", 
+  end = "2021-06-17", 
+  min = "2013-01-01",
+  max = latest_data)
+```
+
+Row {data-height = 800}
+-------------------------------------
+```{r}
 renderPlotly({
-  
-mileage <- dbGetQuery(con, paste0("select day_diff, sum(trip_distance) as total_mil_per_day
-from (select trip_distance, date_diff('day', timestamp '", input$pickup_date[1] , " 00:00:00', pickup_datetime) as day_diff from my_database.nyc_taxi  where vendor_id like '", input$vendor_id ,"' and pickup_datetime between timestamp '", input$pickup_date[1] , " 00:00:00' and timestamp '", input$pickup_date[2]," 00:00:00' and passenger_count between ", input$passengers[1], " and ", input$passengers[2], ") group by day_diff"))
-
-pl <- ggplot(mileage, aes(x=day_diff, y=total_mil_per_day))+geom_line(colour="#0066CC")
-ggplotly(pl)
-
+  data = dbGetQuery(con,paste0(
+    "SELECT timestamp, SUM(count)
+    FROM bluetoothstations.measurement
+    WHERE timestamp BETWEEN '",input$pickup_date[1],"' AND '",input$pickup_date[2],"'
+    GROUP BY timestamp;"  
+  ))
+  plot_ly(data = data, x = ~as.Date(timestamp, format= "%Y-%m-%d"), , y = ~count, mode = 'lines') %>%
+    layout(xaxis = list(
+      range=c(input$pickup_date[1], input$pickup_date[2])
+    ))
 })
 ```
 
-Page 2 {data-orientation=rows}
+
+
+Timing trends {data-orientation=rows}
 =====================================    
+
+
+### Traffic for weekdays
 
 Row {data-height = 200}
 -------------------------------------
-```{r}
-dateRangeInput(inputId = "pickup_date", 
-  label = 'Date:', 
-  start = "2012-01-01", 
-  end = "2012-03-31", 
-  min = "2012-01-01",
-  max = "2013-12-31")
+### Traffic for months
 
-noUiSliderInput(
-    inputId = "passengers",
-    min = 0, max = 10,
-    value = c(3,6),
-    step = 1
-)
-```
-
-   
-Row {data-height=600}
+Row {data-height = 200}
 -------------------------------------
-
-### Map Pick Up Location
-
-```{r}
-renderLeaflet({
-y <- dbGetQuery(con, paste0("select pickup_longitude, pickup_latitude, count(*) as count
-from (select round(pickup_longitude, 3) as pickup_longitude, round(pickup_latitude, 3) as pickup_latitude from my_database.nyc_taxi where vendor_id like '", input$vendor_id, "' and pickup_datetime between timestamp '", input$pickup_date[1], " 00:00:00' and timestamp '", input$pickup_date[2], " 00:00:00' and passenger_count between ", input$passengers[1], " and ", input$passengers[2], ") group by pickup_longitude, pickup_latitude"))
-
-ysub <- subset(y, y$count > 1 & y$pickup_longitude != 0 & y$pickup_latitude != 0)
-
-
-leaflet(ysub) %>%  # Add default OpenStreetMap map tiles
-  setView(-73.99,40.745, 14) %>%
-  addProviderTiles(providers$CartoDB.DarkMatter) %>%
-  #addMarkers(lng=ysub$pickup_longitude, lat=ysub$pickup_latitude, popup="The birthplace of R")
-  addHeatmap(lng = ~pickup_longitude, lat = ~pickup_latitude, intensity = ~(count/max(ysub$count)))
-}
-)
-
-```
