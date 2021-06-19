@@ -3,6 +3,7 @@ output:
   flexdashboard::flex_dashboard:
     theme: yeti
     # css: styles.css
+    vertical_layout: fill
 runtime: shiny
 ---
 
@@ -13,6 +14,7 @@ library("flexdashboard")
 library("DBI")
 library("dplyr")
 library("ggplot2")
+library("tidyverse")
 library("shinyWidgets")
 library("shiny")
 library("plotly")
@@ -32,6 +34,34 @@ con <- dbconnect()
 
 Real time traffic
 =====================================  
+```{r}
+renderPlotly({
+  mapboxToken <- config::get(file = "config.yml")$mapbox
+  Sys.setenv("MAPBOX_TOKEN" = mapboxToken) # for Orca
+  
+  df = read.csv('../../data/2021-06-10.csv')%>%
+    inner_join(dbGetQuery(con, paste0(
+      "SELECT *
+       FROM bluetoothstations.station"
+    )),by = c("station"="name"))
+  fig <- df %>% plot_mapbox(lat = ~latitude, lon = ~longitude,
+                            color = count,
+                            mode = 'scattermapbox', 
+                            hoverinfo='station') 
+  fig <- fig %>% layout(title = 'Number of vehicles by Station',
+                        font = list(color='white'),
+                        plot_bgcolor = '#191A1A', paper_bgcolor = '#191A1A',
+                        mapbox = list(style = 'dark'),
+                        legend = list(orientation = 'h',
+                                      font = list(size = 8)),
+                        margin = list(l = 25, r = 25,
+                                      b = 25, t = 25,
+                                      pad = 2)) 
+  fig <- fig %>% config(mapboxAccessToken = Sys.getenv("MAPBOX_TOKEN"))
+  
+  fig
+})
+```
 
 
 
@@ -115,47 +145,56 @@ renderPlotly({
 History {data-orientation=rows}
 =====================================    
 
-Row {data-height = 50}
--------------------------------------
 ```{r}
 latest_data = "SELECT date(MAX(timestamp)) FROM bluetoothstations.station"
 
 dateRangeInput(inputId = "pickup_date", 
   label = 'Date:', 
-  start = "2013-01-01", 
-  end = "2021-06-17", 
+  start = Sys.Date()-5, 
+  end = Sys.Date(), 
   min = "2013-01-01",
-  max = latest_data)
+  max = latest_data,
+  startview = "year")
 ```
 
-Row {data-height = 800}
--------------------------------------
+
 ```{r}
 renderPlotly({
-  data = dbGetQuery(con,paste0(
-    "SELECT timestamp, SUM(count)
-    FROM bluetoothstations.measurement
-    WHERE timestamp BETWEEN '",input$pickup_date[1],"' AND '",input$pickup_date[2],"'
-    GROUP BY timestamp;"  
-  ))
-  plot_ly(data = data, x = ~as.Date(timestamp, format= "%Y-%m-%d"), , y = ~count, mode = 'lines') %>%
-    layout(xaxis = list(
-      range=c(input$pickup_date[1], input$pickup_date[2])
-    ))
+  #data = dbGetQuery(con,paste0(
+  #  "SELECT timestamp, SUM(count) as vehicles
+  #  FROM bluetoothstations.measurement 
+  #  WHERE timestamp BETWEEN '",input$pickup_date[1],"' AND '",input$pickup_date[2],"'
+  #  GROUP BY timestamp
+  #  ORDER BY timestamp;"  
+  #))
+  data = dbGetQuery(con,paste0("call bluetoothstations.timerange_count('",input$pickup_date[1],"','",input$pickup_date[2],"');"))
+  plot_ly(data = data, x = ~timestamp, y = ~vehicles, mode = 'lines')
 })
 ```
+
+
 
 
 
 Timing trends {data-orientation=rows}
 =====================================    
 
+Row
+-------------------------------------
 
 ### Traffic for weekdays
+```{r}
+renderPlotly({
+  palette = c()
+  data = dbGetQuery(con,paste0("call bluetoothstations.traffic_weekdays();"))
+  plot_ly(data = data, x = ~hour) %>%
+    add_lines(y = ~vehicles,color = ~weekday,
+              color_discrete_sequence = palette)
+})
+```
 
-Row {data-height = 200}
+Row 
 -------------------------------------
 ### Traffic for months
 
-Row {data-height = 200}
--------------------------------------
+

@@ -47,7 +47,7 @@ class MySQLStationManager:
          
     def insert_stations(self, stations: List[BluetoothStation]):
         cursor = self.connection.cursor()
-        query = "INSERT into station (name, latitude, longitude) VALUES (%s, %s, %s)"
+        query = "INSERT IGNORE into station (name, latitude, longitude) VALUES (%s, %s, %s)"
 
         for station in stations:
             if station.coords.lat == None or station.coords.lon == None:
@@ -211,7 +211,7 @@ class MySQLStationManagerAWS:
             if df.empty:
                 print("No data available yet.")
             else:
-                cursor = self.connection.cursor()
+                cursor = self.connect ion.cursor()
                 for _,row in tqdm(df.iterrows(), total=df.shape[0]):
                     sql = "INSERT INTO bluetoothstations.measurement VALUES (%s,%s,%s)"
                     cursor.execute(sql, tuple(row))
