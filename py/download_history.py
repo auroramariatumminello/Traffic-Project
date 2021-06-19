@@ -40,7 +40,7 @@ def get_stations_details(url: str = "https://mobility.api.opendatahub.bz.it/v2/f
 
 # %%
 # Inserting the requested stations inside the station table
-manager.insert_stations(get_stations_details())
+# manager.insert_stations(get_stations_details())
 # %%
 
 # URL to request vehicle detection in Bluetooth Stations
@@ -114,15 +114,15 @@ def from_json_to_measurement(json_data: json):
 
 #%%
 # DATE RANGE
-date_range = DateTimeRange("2018-10-30T01:40:00.000+0000",
-                           "2019-11-26T00:00:00.000+0000",)
+date_range = DateTimeRange("2021-06-07T12:00:00.000+0000",
+                           "2021-06-09T09:00:00.000+0000",)
 date_range = [value for value in date_range.range(dt.timedelta(hours=1))]
 
 
 # %%
 def get_data_in_range(date_range,url=data_url): 
-    manager = MySQLStationManager("Aurora")
-    for i in tqdm.tqdm(range(len(date_range)-1)):
+    manager = MySQLStationManagerAWS()
+    for i in tqdm(range(len(date_range)-1)):
         sdate = date_range[i]
         edate = date_range[i+1]
         try:
