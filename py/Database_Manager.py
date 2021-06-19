@@ -211,7 +211,7 @@ class MySQLStationManagerAWS:
             if df.empty:
                 print("No data available yet.")
             else:
-                cursor = self.connect ion.cursor()
+                cursor = self.connection.cursor()
                 for _,row in tqdm(df.iterrows(), total=df.shape[0]):
                     sql = "INSERT INTO bluetoothstations.measurement VALUES (%s,%s,%s)"
                     cursor.execute(sql, tuple(row))
