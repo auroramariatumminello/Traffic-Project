@@ -1,0 +1,13 @@
+name: Traffic-Bolzen
+title: Traffic-Bolzen
+username:
+account: traffic-bolzen
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 4299977
+bundleId: 4740220
+url: https://traffic-bolzen.shinyapps.io/Traffic-Bolzen/
+when: 1624296562.52082
+lastSyncTime: 1624296562.52082
+asMultiple: TRUE
+asStatic: FALSE
