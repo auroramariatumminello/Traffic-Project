@@ -9,10 +9,14 @@
 }
 
 .navbar-logo:after {
-  content: "Traffic in Bolzen";
+  content: "logo.png";
   font-size: 14px;
   font-weight: bold;
   font-family: "Montserrat, sans-serif";
   position: relative;
   right: 10px;
+}
+
+.navbar-brand{
+  content: "Traffic in Bolzen";
 }

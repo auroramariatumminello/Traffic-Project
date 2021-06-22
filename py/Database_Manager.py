@@ -220,6 +220,10 @@ class MySQLStationManagerAWS:
                 cursor.close()
         except pd.errors.EmptyDataError:
             print("No data yet")
-        
+    
+    def execute_query(self,query):
+        cursor = self.connection.cursor()
+        cursor.execute(query)
+        return cursor.fetchall()[0][0]
 
     
