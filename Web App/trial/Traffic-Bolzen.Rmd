@@ -46,7 +46,6 @@ palettes = list("streets" = pals::kovesi.diverging_rainbow_bgymr_45_85_c67(5),
                  "open-street-map" = pals::kovesi.linear_bmy_10_95_c78(5),
                  "light" = pals::brewer.ylorrd(10),
                  "dark" = pals::plasma(50))
-
 ```
 
 Column {data-width=600}
@@ -197,8 +196,7 @@ History {data-orientation=rows}
 =====================================    
 
 ```{r}
-latest_data = "SELECT date(MAX(timestamp)) FROM bluetoothstations.station"
-
+latest_data = dbGetQuery(con,"SELECT MAX(timestamp) FROM bluetoothstations.measurement;")
 dateRangeInput(inputId = "pickup_date", 
   label = 'Date:', 
   start = Sys.Date()-5, 
@@ -294,6 +292,10 @@ renderPlotly({
 ### Traffic over different seasons
 ```{r}
 renderPlotly({
+  data = dbGetQuery(con,"
+  SELECT MONTH(timestamp) as month,SUM(count) as c
+  FROM bluetoothstations.measurement
+  GROUP BY month(timestamp);")
   d = data.frame(
     labels = c("Winter", "Spring","Summer","Autumn",
                "January","February","March",
@@ -307,11 +309,7 @@ renderPlotly({
                 "Summer","Summer","Autumn",
                 "Autumn","Autumn","Winter"),
     
-    values = c("25","25","25","25",
-               "10","10","10",
-               "5","10","10",
-               "10","5","15",
-               "5","5","5"),
+    values = c(sum()),
     
     stringAsFactors=FALSE
   )
@@ -322,5 +320,6 @@ renderPlotly({
           branchvalues = 'total')
 })
 
+data
 ```
 
