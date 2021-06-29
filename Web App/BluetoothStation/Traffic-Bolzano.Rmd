@@ -1,5 +1,5 @@
 ---
-title: "Traffic in Bolzen"
+title: "Traffic in Bolzano"
 output: 
   flexdashboard::flex_dashboard:
     social: menu
@@ -89,8 +89,9 @@ renderPlotly({
     layout(
       mapbox = list(
         style = map_style, # setting the style
-        zoom = 12,         # settig the zoom
-        center = list(lon = 11.35, lat = 46.485)), # centering on Bolzen
+        # === ZOOM TO INCREMENT
+        zoom = 12,         # settig the zoom 12.5
+        center = list(lon = 11.35, lat = 46.485)), # centering on Bolzano
       margin = list(l = 0, r = 0, # No Margin around the plot
                     b = 0, t = 0,
                     pad = 0))
@@ -258,50 +259,49 @@ dateRangeInput(inputId = "pickup_date",
   min = "2013-01-01",
   max = format(latest_data,'%Y-%m-%d')[[1]],
   startview = "year")
-
-# List of stations from which we can choose
-stations = c(dbGetQuery(con, paste0(
-      "SELECT name
-       FROM bluetoothstations.station"
-    )))
 ```
 
-Column {data-width=800}
+Column {data-width=600}
 -------------------------------------
 
 ### Historical trend of traffic
 
 ```{r}
 renderPlotly({
-    data = dbGetQuery(con,paste0("
-SELECT timestamp, SUM(count) as vehicles
-FROM bluetoothstations.measurement
-WHERE timestamp BETWEEN '",input$pickup_date[1],"' AND '",input$pickup_date[2],"' 
-GROUP BY timestamp;"))
-  
-  ggplotly(ggplot()+
-             stat_smooth(data = data,aes(x = timestamp,
-                                         y = vehicles),
-                         fill='#BFDCED')+
+  history = dbGetQuery(con,paste0("
+    SELECT timestamp, SUM(count) as vehicles
+    FROM bluetoothstations.measurement
+    WHERE timestamp BETWEEN '",input$pickup_date[1],"' AND '",input$pickup_date[2],"' 
+    GROUP BY timestamp;"))
+  ggplotly(ggplot(data = history,
+                  aes(x=timestamp,
+                      y = vehicles,
+                      text = paste("Date: ",format(timestamp,"%Y-%m"))))+
+             geom_smooth(fill='#BFDCED',
+                         span = 0)+
              labs(title = paste0("Traffic from ",input$pickup_date[1]," to ",input$pickup_date[2]))+
              theme_classic()+
-             theme(plot.title = element_text(hjust = 0.5)),tooltip=c('timestamp','vehicles'))
-    
+             theme(plot.title = element_text(hjust = 0.5)),tooltip=c('text','vehicles'))
 })
 ```
 
-Column {data-width=200}
+Column {data-width=400}
 -------------------------------------
 
-### Top 
+### Dates with most or least traffic
+
 ```{r}
 renderDataTable({
-  dbGetQuery(con,paste0("
-SELECT timestamp, SUM(count) as vehicles
-FROM bluetoothstations.measurement
-WHERE timestamp BETWEEN '",input$pickup_date[1],"' AND '",input$pickup_date[2],"' 
-GROUP BY timestamp
-ORDER BY vehicles DESC;"))
+  history = dbGetQuery(con,paste0("
+    SELECT timestamp, SUM(count) as vehicles
+    FROM bluetoothstations.measurement
+    WHERE timestamp BETWEEN '",input$pickup_date[1],"' AND '",input$pickup_date[2],"' 
+    GROUP BY timestamp;")) 
+  history$timestamp = format(history$timestamp, "%Y-%m-%d %H:%M")
+  datatable(history,
+            options = list(pageLength = 20,
+               lengthMenu = list(c(10, 20, -1), c('10', '20', 'All')),
+               order = list(list(2, 'desc'))))
 })
 ```
 
@@ -314,6 +314,7 @@ Column {data-width=600}
 
 ### Traffic for weekdays
 ```{r}
+# === AS FACTOR WEEKDAY
 renderPlotly({
   palette = c("#ffadad","#ffd6a5","#e6f68e","#caffbf","#9bf6ff","#a0c4ff","#ffc6ff")
   data = dbGetQuery(con,paste0("
@@ -325,27 +326,39 @@ renderPlotly({
 })
 ```
 
-
 ### Traffic for months
 
 ```{r}
+assign_daytime = function(hour){
+  ifelse(hour>=6 & hour<12,"Morning",
+         ifelse(hour>=12 & hour<18,"Afternoon",
+                ifelse(hour>=18,"Evening",
+                       "Night")))
+}
+
 renderPlotly({
-  palette = c("#E43F6F","#F56476","#B33C86", # Red
-              "#A5E6BA","#D7FFAB","#FFEE93", # Green
-              "#4E148C","#613DC1","#858AE3", # Violet
-              "#56B1FC","#5D91DE","#398BF7") # Blues
   data = dbGetQuery(con,paste0("SELECT month, hour, AVG(mean) as vehicles
                                FROM bluetoothstations.time_group
                                GROUP BY hour, month
                                ORDER BY hour;"))
+    # Mapping months to string
+  months = c("January","February","March",
+             "April","May","June",
+             "July","August","September",
+             "October","November","December")
+  data$month = months[as.integer(data$month)]
+  data$month = factor(data$month, order = TRUE, levels = months)
+  data$hour = factor(assign_daytime(data$hour), order = TRUE,levels = c("Morning","Afternoon","Evening","Night"))
   data %>%
-    mutate(month = as.factor(month)) %>%
-  plot_ly() %>%
-    add_lines(
-      x = ~hour,
-      y = ~vehicles,
-      color = ~month,
-      color_discrete_sequence = pal)
+    group_by(month,hour) %>%
+    summarise(vehicles = mean(vehicles)) %>%
+    arrange(month,hour)%>%
+  plot_ly(colors = c('#FFADD3','#a9def9','#FBF4B1','#CDF3DC'),
+          x = ~month,
+          y = ~vehicles,
+          color = ~hour,
+          type='bar')%>%
+    layout(barmode = 'group')
 })
 ```
 
@@ -359,39 +372,40 @@ renderPlotly({
   data = dbGetQuery(con,"SELECT weekday, hour, AVG(sum) as vehicles
                                FROM bluetoothstations.time_group
                                GROUP BY weekday, hour;")
-  
-  
   data_second = data %>%
-    select(-hour) %>%
+    group_by(weekday) %>%
+    summarise(count = sum(vehicles)) %>%
     rename(hour = weekday) %>%
-    group_by(hour) %>%
-    summarise(vehicles = sum(vehicles)) %>%
-    mutate(weekday = "")
-  data = rbind(data %>%
-                 mutate(hour = weekday),
-        data_second) %>%
-    mutate(daytime = ifelse(hour>=6 & hour<12,"Morning",
-                            ifelse(hour>=12 & hour<18,"Afternoon",
-                                   ifelse(hour>=18,"Evening",
-                                          "Night"))))
-  plot_ly(data = data,
-          labels = ~daytime,
-          parents = ~weekday, 
-          type = 'sunburst',
-          values = ~vehicles)
+    mutate(weekday = '')
+  data$hour = assign_daytime(data$hour)
+  data %>%
+    group_by(weekday,hour) %>%
+    summarise(count = sum(vehicles)) %>%
+    rbind(data_second) %>%
+    mutate(ids = paste0(weekday,hour)) %>%
+  plot_ly() %>%
+    add_trace(
+      type = 'sunburst',
+      ids = ~ids,
+      labels = ~hour,
+      parents = ~weekday, 
+      values = ~count,
+      branchvalues = 'total'
+    ) %>%
+    layout(sunburstcolorway = c("#ffadad","#ffd6a5","#FBF4B1","#CDF3DC","#a9def9","#bbadff","#FFADD3"))
 })
 ```
 
 
 ### Traffic over different seasons
+
 ```{r}
 renderPlotly({
   
   # Query with data about months
   data = dbGetQuery(con,"SELECT month, AVG(sum) as vehicles
                                FROM bluetoothstations.time_group
-                               GROUP BY month, hour;")
-  
+                               GROUP BY month;")
   # Column with seasons
   data$season = ifelse(data$month %in% c(12,1,2),'Winter',
                        ifelse(data$month %in% c(3,4,5), 'Spring',
@@ -404,7 +418,7 @@ renderPlotly({
   data$month = months[as.integer(data$month)]
   data %>%
     group_by(season) %>%
-    summarise(vehicles = sum(vehicles)) %>%
+    summarise(vehicles = sum(vehicles))%>%
     rename(month = season) %>%
     mutate(season = "") %>%
     rbind(data) %>%
@@ -413,7 +427,8 @@ renderPlotly({
           parents = ~season, 
           type = 'sunburst',
           values = ~vehicles,
-          branchvalues = 'total')
+          branchvalues = 'total') %>%
+    layout(sunburstcolorway = c('#FFADD3','#a9def9','#FBF4B1','#CDF3DC'))
 })
 ```
 
