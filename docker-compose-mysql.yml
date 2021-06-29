@@ -1,0 +1,16 @@
+version: '3.1'
+
+services:
+
+  mysql:
+    image: mysql:5.7
+    container_name: "bdt-mysql"
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_NAME: traffic-db
+      MYSQL_HOST: traffic-db.ce2ieg6xrefy.us-east-2.rds.amazonaws.com
+      MYSQL_USER: "marshall"
+      MYSQL_PASSWORD: "happyslashgiving"
