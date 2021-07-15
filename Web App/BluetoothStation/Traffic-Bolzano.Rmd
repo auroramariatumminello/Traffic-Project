@@ -58,12 +58,10 @@ palettes = list("streets" = pals::kovesi.diverging_rainbow_bgymr_45_85_c67(5),
 ### Traffic prediction
 
 ```{r}
-# === REMEMBER TO TAKE THE PREDICTIONS AND NOT THE CSV FILE
-
 renderPlotly({
   
   # Loading data
-  df = import('https://raw.githubusercontent.com/AuroraArctic/Traffic-Project/main/data/predictions.csv?token=AKQSTVPWY67XXC5WRBNYZPDA63RKO')%>%
+  df = import('https://raw.githubusercontent.com/AuroraArctic/Traffic-Project/main/data/prediction.csv?token=AKQSTVORD74DSRVJJP3X3VDA7GVDM')%>%
     arrange(desc(timestamp)) %>%
     filter(timestamp == "2021-06-10 15:00:00" ) %>%
     inner_join(dbGetQuery(con, paste0(
