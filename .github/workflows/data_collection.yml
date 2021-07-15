@@ -1,4 +1,4 @@
-name: automate-real-data-download
+name: real time data download
 
 on:
   schedule:

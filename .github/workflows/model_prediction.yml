@@ -1,4 +1,4 @@
-name: automate-real-data-download
+name: model prediction
 
 on:
   schedule:
