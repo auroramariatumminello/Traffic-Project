@@ -20,11 +20,9 @@ start_date = (last_date-timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
 data = pd.DataFrame(db.execute_query('SELECT * FROM bluetoothstations.measurement WHERE timestamp >= \"'+start_date+'\";'),columns=['timestamp','count','station'])
 first_date = db.execute_query("SELECT MIN(timestamp) FROM bluetoothstations.measurement;")[0][0]
 
-#%%
 # 2. Convert timestamp to int
 data['timestamp'] = [(int(x.timestamp())-int(first_date.timestamp())) for x in data['timestamp']]
 
-# %%
 
 # 3. Data preprocessing
 # convert series to supervised learning
@@ -64,6 +62,7 @@ data_per_station = [data[data['station']== x] for x in range(1,len(stations)+1)]
 data = data[['count','timestamp','station']]
 #%%
 
+# 5. Preprocessing data considering 5 temporal stages of data
 def create_model_dataset(dataframes):
 	scaler = StandardScaler()
 	final_df = pd.DataFrame()
@@ -83,17 +82,18 @@ train, scaler = create_model_dataset(data_per_station)
 train = train.values
 #%%
 # %%
+# 6. Dividing X and y
 train_X = train[:,:-1]
 train_y = train[:,-1]
 train_X = train_X.reshape((train_X.shape[0], 1, train_X.shape[1]))
 
 # %%
 
-# Importing the pretrained model
-model = keras.models.model_from_json(open("../data/model/model.json",'r').read())
-model.load_weights("../data/model/model.h5")
+# 7. Importing the pretrained model
+model = keras.models.model_from_json(open("data/model/model.json",'r').read())
+model.load_weights("data/model/model.h5")
 
-# %%
+# 8. Predicting the outcome for the latest timestamp
 yhat = model.predict(train_X)
 predictions = scaler.inverse_transform(yhat)
 
@@ -108,17 +108,17 @@ indexes.append(-1)
 # Keeping only the actual final predictions for each station
 preds = predictions.ravel()[indexes]
 
+# 9. Creating the output csv
 output = pd.DataFrame()
 output['count'] = [max(int(np.round(x,0)),0) for x in preds]
 output['station'] = codes.keys()
 output['timestamp'] = [(last_date+timedelta(minutes=10)).strftime("%Y-%m-%d %H:%M:%S")] * len(preds)
 
-output.to_csv("../data/prediction.csv",index=False)
+output.to_csv("data/prediction.csv",index=False)
 
-# %%
+# 10. Overriding the past model with updated weights
 model_json = model.to_json()
-with open("../data/model/model.json", "w") as json_file:
+with open("data/model/model.json", "w") as json_file:
     json_file.write(model_json)
 # serialize weights to HDF5
-model.save_weights("../data/model/model.h5")
-# %%
+model.save_weights("data/model/model.h5")
