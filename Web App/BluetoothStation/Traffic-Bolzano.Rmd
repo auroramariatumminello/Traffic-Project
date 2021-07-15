@@ -24,6 +24,7 @@ library("DT")
 library("leaflet")
 library("leaflet.extras")
 library("maps")
+library(rio)
 
 # Connection to DB
 source("mysql_connection.R")
@@ -60,9 +61,9 @@ palettes = list("streets" = pals::kovesi.diverging_rainbow_bgymr_45_85_c67(5),
 # === REMEMBER TO TAKE THE PREDICTIONS AND NOT THE CSV FILE
 
 renderPlotly({
-
+  
   # Loading data
-  df = read.csv('2021-06-10.csv')%>%
+  df = import('https://raw.githubusercontent.com/AuroraArctic/Traffic-Project/main/data/predictions.csv?token=AKQSTVPWY67XXC5WRBNYZPDA63RKO')%>%
     arrange(desc(timestamp)) %>%
     filter(timestamp == "2021-06-10 15:00:00" ) %>%
     inner_join(dbGetQuery(con, paste0(
@@ -89,8 +90,7 @@ renderPlotly({
     layout(
       mapbox = list(
         style = map_style, # setting the style
-        # === ZOOM TO INCREMENT
-        zoom = 12,         # settig the zoom 12.5
+        zoom = 12.5,         
         center = list(lon = 11.35, lat = 46.485)), # centering on Bolzano
       margin = list(l = 0, r = 0, # No Margin around the plot
                     b = 0, t = 0,
@@ -199,7 +199,8 @@ renderPlotly({
       xaxis = list(title = 'Hour'),
       yaxis = list(title = 'Average traffic')
     )
-})
+})%>%
+  bindCache(input$station)
 ```
 
 ### Traffic over the day
@@ -259,6 +260,9 @@ dateRangeInput(inputId = "pickup_date",
   min = "2013-01-01",
   max = format(latest_data,'%Y-%m-%d')[[1]],
   startview = "year")
+
+textOutput("Please, select a timerange larger than 5 days.")
+
 ```
 
 Column {data-width=600}
@@ -267,7 +271,17 @@ Column {data-width=600}
 ### Historical trend of traffic
 
 ```{r}
+# === HANDLE EXCEPTIONS:
+# === 1. start >= end
+# === 2. distance between start and end < 5 days
+
 renderPlotly({
+  start = input$pickup_date[1]
+  end = input$pickup_date[2]
+  if(start >= end){
+   start = format(latest_data-5,'%Y-%m-%d')[[1]]
+   end = format(latest_data,'%Y-%m-%d')[[1]]
+  }
   history = dbGetQuery(con,paste0("
     SELECT timestamp, SUM(count) as vehicles
     FROM bluetoothstations.measurement
@@ -314,13 +328,13 @@ Column {data-width=600}
 
 ### Traffic for weekdays
 ```{r}
-# === AS FACTOR WEEKDAY
 renderPlotly({
   palette = c("#ffadad","#ffd6a5","#e6f68e","#caffbf","#9bf6ff","#a0c4ff","#ffc6ff")
   data = dbGetQuery(con,paste0("
                                SELECT weekday, hour, AVG(mean) as mean
                                FROM bluetoothstations.time_group
                                GROUP BY weekday, hour;"))
+  data$weekday = factor(data$weekday,order=TRUE,levels = c('Sunday','Saturday','Friday','Thursday','Wednesday','Tuesday','Monday'))
   plot_ly(data = data, x = ~hour,colors = palette) %>%
     add_lines(y = ~mean,color = ~weekday)
 })
@@ -348,7 +362,7 @@ renderPlotly({
              "October","November","December")
   data$month = months[as.integer(data$month)]
   data$month = factor(data$month, order = TRUE, levels = months)
-  data$hour = factor(assign_daytime(data$hour), order = TRUE,levels = c("Morning","Afternoon","Evening","Night"))
+  data$hour = factor(assign_daytime(data$hour), order = TRUE,levels = c("Night","Evening","Afternoon","Morning"))
   data %>%
     group_by(month,hour) %>%
     summarise(vehicles = mean(vehicles)) %>%

@@ -15,17 +15,19 @@ class Position:
 
 class BluetoothStation:
     
-    def __init__(self, name: str, coords: Optional[Position] = Position(None, None)):
+    def __init__(self, name: str, code: Optional[int],coords: Optional[Position] = Position(None, None)):
+
         """
         Args:
             name ([String]): name and id of the Station
             coords ([Position]): longitude and latitude of the station
         """
+        self.code = code
         self.name = name
         self.coords = coords
     
     def to_list(self):
-        return [self.name] + self.coords.to_list()
+        return [self.code,self.name] + self.coords.to_list()
     
     
       
