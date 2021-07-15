@@ -1,4 +1,4 @@
-name: real time data download
+name: real time data collection
 
 on:
   schedule:
@@ -17,10 +17,10 @@ jobs:
         with:
           python-version: '3.9.5' # install the python version needed
           
-      - name: activating virtual environment
+      - name: install python packages
         run: |
-          source ./py/venv/bin/activate
           python -m pip install --upgrade pip
+          pip install -r download_requirements.txt
           
       - name: execute py script # run sj-gobierno.py to get the latest data
         run: python py/download_real_time.py

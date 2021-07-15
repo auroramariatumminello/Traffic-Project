@@ -107,6 +107,7 @@ indexes.append(-1)
 
 # Keeping only the actual final predictions for each station
 preds = predictions.ravel()[indexes]
+print(preds)
 
 # 9. Creating the output csv
 output = pd.DataFrame()
@@ -115,10 +116,11 @@ output['station'] = codes.keys()
 output['timestamp'] = [(last_date+timedelta(minutes=10)).strftime("%Y-%m-%d %H:%M:%S")] * len(preds)
 
 output.to_csv("data/prediction.csv",index=False)
-
+print("Predictions saved")
 # 10. Overriding the past model with updated weights
 model_json = model.to_json()
 with open("data/model/model.json", "w") as json_file:
     json_file.write(model_json)
 # serialize weights to HDF5
 model.save_weights("data/model/model.h5")
+print("Model saved.")

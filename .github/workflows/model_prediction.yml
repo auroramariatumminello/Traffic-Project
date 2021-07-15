@@ -17,18 +17,10 @@ jobs:
         with:
           python-version: '3.9.5' # install the python version needed
           
-      - uses: syphar/restore-virtualenv@v1
-        id: cache-virtualenv
-        with:
-          requirement_files: py/requirements.txt  # this is optional
-
-      - uses: syphar/restore-pip-download-cache@v1
-        if: steps.cache-virtualenv.outputs.cache-hit != 'true'
-
-        # the package installation will only be executed when the
-        # requirements-files have changed.
-      - run: pip install -r py/requirements.txt
-        if: steps.cache-virtualenv.outputs.cache-hit != 'true'
-
-      - name: Execute script
+      - name: install python packages
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r model_requirements.txt
+          
+      - name: execute py script # run sj-gobierno.py to get the latest data
         run: python py/Traffic_Prediction.py
