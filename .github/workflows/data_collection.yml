@@ -17,10 +17,10 @@ jobs:
         with:
           python-version: '3.9.5' # install the python version needed
           
-      - name: install python packages
+      - name: activating virtual environment
         run: |
+          source ./py/venv/bin/activate
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
           
       - name: execute py script # run sj-gobierno.py to get the latest data
         run: python py/download_real_time.py
