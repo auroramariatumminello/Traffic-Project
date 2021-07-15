@@ -1,1 +1,0 @@
-..\venv\Scripts\python.exe download_real_time.py

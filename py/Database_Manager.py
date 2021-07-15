@@ -47,7 +47,8 @@ class MySQLStationManager:
          
     def insert_stations(self, stations: List[BluetoothStation]):
         cursor = self.connection.cursor()
-        query = "INSERT IGNORE into station (name, latitude, longitude) VALUES (%s, %s, %s)"
+        next_code = cursor.execute("SELECT MAX(code) FROM station;")+1
+        query = "INSERT IGNORE into station (code, name, latitude, longitude) VALUES ("+next_code+",%s, %s, %s)"
 
         for station in stations:
             if station.coords.lat == None or station.coords.lon == None:
@@ -90,7 +91,7 @@ class MySQLStationManager:
 
         print("Got all measurements.")
         stations = []
-        for name, latitude, longitude in stations:
+        for code, name, latitude, longitude in stations:
             stations.append(BluetoothStation(
                 name,
                 Position(latitude, longitude)
@@ -189,13 +190,12 @@ class MySQLStationManagerAWS:
         query = 'SELECT * from bluetoothstations.station'
         cursor.execute(query)
         stations = []
-        for name, latitude, longitude in cursor:
+        for code, name, latitude, longitude in cursor:
             stations.append(BluetoothStation(
                 name,
+                code,
                 Position(latitude, longitude)
             ))
-        print("Finished.")
-        print([x.to_list() for x in stations])
         cursor.close()
         return stations
     
@@ -224,6 +224,6 @@ class MySQLStationManagerAWS:
     def execute_query(self,query):
         cursor = self.connection.cursor()
         cursor.execute(query)
-        return cursor.fetchall()[0][0]
+        return cursor.fetchall()
 
     

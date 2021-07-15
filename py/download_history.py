@@ -114,8 +114,8 @@ def from_json_to_measurement(json_data: json):
 
 #%%
 # DATE RANGE
-date_range = DateTimeRange("2021-06-07T12:00:00.000+0000",
-                           "2021-06-09T09:00:00.000+0000",)
+date_range = DateTimeRange("2021-07-10T05:30:00.000+0000",
+                           "2021-07-10T16:00:00.000+0000",)
 date_range = [value for value in date_range.range(dt.timedelta(hours=1))]
 
 
