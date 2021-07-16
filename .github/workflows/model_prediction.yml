@@ -2,7 +2,7 @@ name: model prediction
 
 on:
   schedule:
-    - cron: '*/30 * * * *' # runs every 30 min
+    - cron: '* */4 * * *' # runs every 4 hours
   workflow_dispatch:
 jobs:
   build:
@@ -23,4 +23,4 @@ jobs:
           pip install -r py/model_requirements.txt
           
       - name: execute py script # run sj-gobierno.py to get the latest data
-        run: python py/Traffic_Prediction.py
+        run: python py/Traffic_Prediction_Loop.py

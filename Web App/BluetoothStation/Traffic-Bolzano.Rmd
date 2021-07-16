@@ -49,6 +49,7 @@ selectInput(inputId = "map_style",
             choices = c("streets","open-street-map","light","dark"))
             #width = "100%")
 
+
 latest_timestamp = mongo_db$find(sort = '{"timestamp":-1}', limit=1)$timestamp[1]
 
 # Palettes for real-time map
@@ -71,7 +72,7 @@ renderPlotly({
 
     # Plotting
   map_style = input$map_style[1]
-  plot_mapbox(df) %>%
+  plot_mapbox(latest_data) %>%
   add_markers(
     x = ~longitude, 
     y = ~latitude, 

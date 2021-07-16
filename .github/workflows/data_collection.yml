@@ -2,7 +2,7 @@ name: real time data collection
 
 on:
   schedule:
-    - cron: '*/30 * * * *' # runs every 30 min
+    - cron: '*/45 * * * *' # runs every 30 min
   workflow_dispatch:
 jobs:
   build:
