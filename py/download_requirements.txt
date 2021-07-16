@@ -4,3 +4,4 @@ mysql-connector-python==8.0.24
 pandas==1.2.0
 requests==2.22.0
 tqdm==4.59.0
+pymongo==3.12.0

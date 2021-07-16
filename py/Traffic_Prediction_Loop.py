@@ -2,8 +2,10 @@
 # Libraries
 
 # Model
+from pandas.core.frame import DataFrame
 from Database_Manager import MongoDBManager
 from tensorflow import keras
+from typing import Optional
 
 # Data Transformation
 from datetime import timedelta
@@ -14,14 +16,17 @@ from sklearn.preprocessing import StandardScaler
 import Database_Manager
 # %%
 # 1. Access latest data
-def initialize_dataset():
+def initialize_dataset(last_date, new_predictions: Optional[DataFrame] = None):
     # 1. Selecting the most recent data inside the db
     db = Database_Manager.MySQLStationManagerAWS()
-    last_date = db.get_latest_datetime()
     start_date = (last_date-timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
     data = pd.DataFrame(db.execute_query('SELECT * FROM bluetoothstations.measurement WHERE timestamp >= \"'+start_date+'\";'),columns=['timestamp','count','station'])
-    first_date = db.execute_query("SELECT MIN(timestamp) FROM bluetoothstations.measurement;")[0][0]
+    if new_predictions is not None:
+        data = pd.concat([data,new_predictions]) 
+    return data, db
 
+def prepare_dataset_for_sequential(data, last_date, db):
+    first_date = db.execute_query("SELECT MIN(timestamp) FROM bluetoothstations.measurement;")[0][0]
     # 2. Convert timestamp to int
     data['timestamp'] = [(int(x.timestamp())-int(first_date.timestamp())) for x in data['timestamp']]
 
@@ -34,7 +39,7 @@ def initialize_dataset():
     data['station'] = [codes[x] for x in data['station']]
     data_per_station = [data[data['station']== x] for x in range(1,len(stations)+1)]
     data = data[['count','timestamp','station']]
-    return data_per_station, last_date, codes
+    return data_per_station, codes
 
 # 2. Preprocessing data considering 5 temporal stages of data
 def create_model_dataset(dataframes):
@@ -76,14 +81,14 @@ def series_to_supervised(data, n_in=1, n_out=1, dropnan=True):
 		agg.dropna(inplace=True)
 	return agg
 
-# %%
+
 # 6. Dividing X and y
 def data_split(data):
     train_X = data[:,:-1]
     train_y = data[:,-1]
     train_X = train_X.reshape((train_X.shape[0], 1, train_X.shape[1]))
     return train_X, train_y
-# %%
+
 # 7. Importing the pretrained model
 def model_import(path = "../data/model"):
     model = keras.models.model_from_json(open(path+"/model.json",'r').read())
@@ -110,7 +115,7 @@ def obtain_prediction_dataframe(model, X, data, scaler, station_codes):
     output = pd.DataFrame()
     output['count'] = [max(int(np.round(x,0)),0) for x in preds]
     output['station'] = station_codes.keys()
-    output['timestamp'] = [(last_date+timedelta(minutes=10)).strftime("%Y-%m-%d %H:%M:%S")] * len(preds)
+    output['timestamp'] = [(last_date+timedelta(minutes=10))] * len(preds)
     return output
 
 # 10. Overriding the past model with updated weights
@@ -127,15 +132,35 @@ def insert_inside_db(dataframe):
     print("Predictions saved inside MongoDB")
 
 #%%
-# Start with latest data (within an hour)
-data_per_station, last_date, codes= initialize_dataset()
-
 # Enter inside the loop:
-# 1. Create data for the model
-test, scaler = create_model_dataset(data_per_station)
-test = test.values
-test_X, test_y = data_split(test)
-# 2. Model import
-model = model_import()
-# 3. Prediction + insertion inside the db
-predictions = obtain_prediction_dataframe(model, test_X, test, scaler, codes)
+i=1
+predictions = None
+last_date = Database_Manager.MySQLStationManagerAWS().get_latest_datetime()
+
+while(i<=12):
+    
+    # 1. Create data for the model and eventually appending latest data with predictions for new predictions
+    data, db = initialize_dataset(last_date, predictions)
+    data_per_station, codes= prepare_dataset_for_sequential(data, last_date, db)
+    test, scaler = create_model_dataset(data_per_station)
+    test = test.values
+    test_X, test_y = data_split(test)
+    
+    # 2. Model import
+    model = model_import()
+    
+    # 3. Prediction + insertion inside the db
+    predictions = obtain_prediction_dataframe(model, test_X, test, scaler, codes)
+    print("Predictions done: "+ str(i))
+    update_model(model)
+    insert_inside_db(predictions)
+    
+    # Reordering columns before appending
+    predictions = predictions[['timestamp','count','station']]
+    print(predictions.tail())
+    last_date = predictions.timestamp[0]
+    i = i+1
+#%%
+
+
+
