@@ -90,7 +90,7 @@ def data_split(data):
     return train_X, train_y
 
 # 7. Importing the pretrained model
-def model_import(path = "../data/model"):
+def model_import(path = "data/model"):
     model = keras.models.model_from_json(open(path+"/model.json",'r').read())
     model.load_weights(path+"/model.h5")
     return model
@@ -119,7 +119,7 @@ def obtain_prediction_dataframe(model, X, data, scaler, station_codes):
     return output
 
 # 10. Overriding the past model with updated weights
-def update_model(model, path = "../data/model"):
+def update_model(model, path = "data/model"):
     model_json = model.to_json()
     with open(path+"/model.json", "w") as json_file:
         json_file.write(model_json)
