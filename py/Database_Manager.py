@@ -4,6 +4,8 @@ from typing import List
 import pandas as pd
 from tqdm import tqdm
 from BluetoothStation import BluetoothStation, Measurement, Position
+from pymongo import MongoClient
+
 #%%
 class MySQLStationManager:
     
@@ -226,4 +228,13 @@ class MySQLStationManagerAWS:
         cursor.execute(query)
         return cursor.fetchall()
 
+class MongoDBManager():
     
+    def __init__(self):
+        self.client = MongoClient('mongodb+srv://root:BigData@cluster0.oc5hq.mongodb.net/test')
+        self.db = self.client.TrafficBolzano
+        self.collection = self.db.Predictions
+
+    # Inserting model predictions inside the collection
+    def insert_predictions(self,dataframe):
+        self.collection.insert_many(dataframe.to_dict('records'))
