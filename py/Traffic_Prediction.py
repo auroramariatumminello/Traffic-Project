@@ -2,7 +2,7 @@
 # Libraries
 
 # Model
-from py.Database_Manager import MongoDBManager
+from Database_Manager import MongoDBManager
 from tensorflow import keras
 
 # Data Transformation

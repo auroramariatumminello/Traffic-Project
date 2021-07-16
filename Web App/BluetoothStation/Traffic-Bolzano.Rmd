@@ -30,7 +30,7 @@ library("rio")
 source("mysql_connection.R")
 library("RMariaDB")
 
-# Establish connectiong to MySQL
+# Establish connection to MySQL
 con <- mysqldbconnect()
 mongo_db <- mongodbconnect()
 
@@ -49,6 +49,8 @@ selectInput(inputId = "map_style",
             choices = c("streets","open-street-map","light","dark"))
             #width = "100%")
 
+latest_timestamp = mongo_db$find(sort = '{"timestamp":-1}', limit=1)$timestamp[1]
+
 # Palettes for real-time map
 palettes = list("streets" = pals::kovesi.diverging_rainbow_bgymr_45_85_c67(5),
                  "open-street-map" = pals::kovesi.linear_bmy_10_95_c78(5),
@@ -61,14 +63,13 @@ palettes = list("streets" = pals::kovesi.diverging_rainbow_bgymr_45_85_c67(5),
 ```{r}
 renderPlotly({
   
-  latest_timestamp = mongo_db$find(sort = '{"timestamp":-1}', limit=1)$timestamp[1]
-  latest_data = mongo_db$find(paste0('{"timestamp":"',latest_timestamp,'"}')) %>%
+  latest_data = data.frame(mongo_db$find(paste0('{"timestamp":"',latest_timestamp,'"}')) %>%
     inner_join(dbGetQuery(con, paste0(
       "SELECT * FROM bluetoothstations.station 
        WHERE latitude IS NOT NULL and longitude IS NOT NULL;"
-    )),by = c("station"="name"))
-  
-  # Plotting
+    )),by = c("station"="name")))
+
+    # Plotting
   map_style = input$map_style[1]
   plot_mapbox(df) %>%
   add_markers(
@@ -137,7 +138,7 @@ renderPlotly({
       "SELECT *
        FROM bluetoothstations.station;"))
   }
-  
+
   plot_mapbox(df) %>%
   add_markers(
     x = ~longitude, 
