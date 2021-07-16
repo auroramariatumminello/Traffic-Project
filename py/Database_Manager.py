@@ -238,3 +238,6 @@ class MongoDBManager():
     # Inserting model predictions inside the collection
     def insert_predictions(self,dataframe):
         self.collection.insert_many(dataframe.to_dict('records'))
+
+    def delete_all_documents(self):
+        self.collection.delete_many({})
