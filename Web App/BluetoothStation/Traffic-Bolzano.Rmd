@@ -24,14 +24,15 @@ library("DT")
 library("leaflet")
 library("leaflet.extras")
 library("maps")
-library(rio)
+library("rio")
 
 # Connection to DB
 source("mysql_connection.R")
 library("RMariaDB")
 
 # Establish connectiong to MySQL
-con <- dbconnect()
+con <- mysqldbconnect()
+mongo_db <- mongodbconnect()
 
 # Inserting token of mapbox for styling
 mapboxToken <- config::get(file = "config.yml")$mapbox
@@ -60,10 +61,8 @@ palettes = list("streets" = pals::kovesi.diverging_rainbow_bgymr_45_85_c67(5),
 ```{r}
 renderPlotly({
   
-  # Loading data
-  df = import('https://raw.githubusercontent.com/AuroraArctic/Traffic-Project/main/data/prediction.csv?token=AKQSTVORD74DSRVJJP3X3VDA7GVDM')%>%
-    arrange(desc(timestamp)) %>%
-    filter(timestamp == "2021-06-10 15:00:00" ) %>%
+  latest_timestamp = mongo_db$find(sort = '{"timestamp":-1}', limit=1)$timestamp[1]
+  latest_data = mongo_db$find(paste0('{"timestamp":"',latest_timestamp,'"}')) %>%
     inner_join(dbGetQuery(con, paste0(
       "SELECT * FROM bluetoothstations.station 
        WHERE latitude IS NOT NULL and longitude IS NOT NULL;"
