@@ -2,6 +2,7 @@
 # Libraries
 
 # Model
+from py.Database_Manager import MongoDBManager
 from tensorflow import keras
 
 # Data Transformation
@@ -90,37 +91,39 @@ train_X = train_X.reshape((train_X.shape[0], 1, train_X.shape[1]))
 # %%
 
 # 7. Importing the pretrained model
-model = keras.models.model_from_json(open("data/model/model.json",'r').read())
-model.load_weights("data/model/model.h5")
+model = keras.models.model_from_json(open("../data/model/model.json",'r').read())
+model.load_weights("../data/model/model.h5")
 
 # 8. Predicting the outcome for the latest timestamp
 yhat = model.predict(train_X)
 predictions = scaler.inverse_transform(yhat)
 
-indexes = []
+indexes = dict()
+for label in codes.values():
+    indexes[label] = 0
 i = 1
-for j in range(len(train[:,1])):
+for j in range(len(train[:,1])-1):
     if train[j,1]>i:
-        indexes.append(j-1)
+        indexes[train[j-1,1]] = predictions.ravel()[j-1]
         i = i+1
-indexes.append(-1)          
-
-# Keeping only the actual final predictions for each station
-preds = predictions.ravel()[indexes]
-print(preds)
-
+    
+indexes[list(indexes.keys())[-1]] = predictions.ravel()[-1]
+preds = indexes.values()
 # 9. Creating the output csv
 output = pd.DataFrame()
 output['count'] = [max(int(np.round(x,0)),0) for x in preds]
 output['station'] = codes.keys()
 output['timestamp'] = [(last_date+timedelta(minutes=10)).strftime("%Y-%m-%d %H:%M:%S")] * len(preds)
 
-output.to_csv("data/prediction.csv",index=False)
-print("Predictions saved")
+mongodb = MongoDBManager()
+mongodb.insert_predictions(output)
+print("Predictions saved inside MongoDB")
+
 # 10. Overriding the past model with updated weights
 model_json = model.to_json()
-with open("data/model/model.json", "w") as json_file:
+with open("../data/model/model.json", "w") as json_file:
     json_file.write(model_json)
 # serialize weights to HDF5
-model.save_weights("data/model/model.h5")
+model.save_weights("../data/model/model.h5")
 print("Model saved.")
+
