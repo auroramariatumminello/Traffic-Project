@@ -6,7 +6,7 @@ library(tidyverse)
 
 config <- config::get(file = "config.yml")
 
-dbconnect <- function(){ 
+mysqldbconnect <- function(){ 
   mydb <- RMariaDB::dbConnect(
     RMariaDB::MariaDB(),
     user = config$db_user,
@@ -17,4 +17,10 @@ dbconnect <- function(){
   return(mydb)
 }
 
-dbconnect()
+mongodbconnect <- function(){ 
+  library(mongolite)
+  m <- mongo(collection = "Predictions",
+             db = 'TrafficBolzano',
+             url = config$mongodb)
+  return(m)
+}
