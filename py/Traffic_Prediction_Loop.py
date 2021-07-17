@@ -165,6 +165,3 @@ while(i<=24):
     predictions['timestamp'] = [datetime.strptime(x,"%Y-%m-%d %H:%M:%S") for x in predictions['timestamp']]
     last_date = predictions.timestamp[0]
     i = i+1
-
-#%%
-MongoDBManager().collection.delete_many({})
