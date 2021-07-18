@@ -15,7 +15,7 @@ class Position:
 
 class BluetoothStation:
     
-    def __init__(self, name: str, code: Optional[int],coords: Optional[Position] = Position(None, None)):
+    def __init__(self, name: str, code: Optional[int] = None ,coords: Optional[Position] = Position(None, None)):
 
         """
         Args:

@@ -28,7 +28,7 @@ def prepare_dataset_for_sequential(dataframe, last_date, db):
     first_date = db.execute_query("SELECT MIN(timestamp) FROM bluetoothstations.measurement;")[0][0]
     # 2. Convert timestamp to int
     data = dataframe.copy()
-    data['timestamp'] = [(int(x.timestamp())-int(first_date.timestamp())) for x in data['timestamp']]
+    # data['timestamp'] = [(int(x.timestamp())-int(first_date.timestamp())) for x in data['timestamp']]
 
     # 3. Create a list of dataframe for each station
     stations = db.list_all_stations()
@@ -137,7 +137,7 @@ i=1
 predictions = None
 last_date = Database_Manager.MySQLStationManagerAWS().get_latest_datetime()
 data, db = initialize_dataset(last_date)
-while(i<=24):
+while(i<=2):
     
     # 1. Create data for the model and eventually appending latest data with predictions for new predictions
     data = pd.concat([data,predictions])
@@ -147,21 +147,23 @@ while(i<=24):
     test_X, test_y = data_split(test)
     
     # 2. Model import
-    model = model_import()
+    model = model_import("../data/model/")
     
-    # 3. Prediction + insertion inside the db
+    # 3. Predictions
     predictions = None
     predictions = obtain_prediction_dataframe(model, test_X, test, scaler, codes)
-    predictions['timestamp'] = [x.strftime("%Y-%m-%d %H:%M:%S") for x in predictions['timestamp']]
+
     # Reordering columns before appending
     predictions = predictions[['timestamp','count','station']]
-    
     print("Predictions done: "+ str(i))
+    
+    # 4. Updating the model
     update_model(model)
+    
+    # 5. Inserting predictions inside the db
     insert_inside_db(predictions)
     
-    # predictions['timestamp'] = [(int(x.timestamp())-int(first_date.timestamp())) for x in data['timestamp']]
-    #print(predictions.tail()
-    predictions['timestamp'] = [datetime.strptime(x,"%Y-%m-%d %H:%M:%S") for x in predictions['timestamp']]
+    # 6. Get last date of "training" samples for next iteration
     last_date = predictions.timestamp[0]
     i = i+1
+# %%

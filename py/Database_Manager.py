@@ -1,6 +1,6 @@
 #%%
 import mysql.connector
-from typing import List
+from typing import List, Optional
 import pandas as pd
 from tqdm import tqdm
 from BluetoothStation import BluetoothStation, Measurement, Position
@@ -139,22 +139,32 @@ class MySQLStationManagerAWS:
         self.connection.commit()
         cursor.close()
          
+    def get_last_code(self):
+        cursor = self.connection.cursor()
+        query = "SELECT MAX(code) FROM bluetoothstations.station"
+        cursor.execute(query)
+        return cursor.fetchall()[0][0]
+
     def insert_stations(self, stations: List[BluetoothStation]):
         cursor = self.connection.cursor()
+        last_code = self.get_last_code()
+        codes = [last_code+i for i in range(1,len(stations)+1)]
         query = "INSERT into bluetoothstations.station (name, latitude, longitude) VALUES (%s, %s, %s)"
 
-        for station in stations:
-            if station.coords.lat == None or station.coords.lon == None:
+        for i in range(len(stations)):
+            if stations[i].coords.lat == None or stations[i].coords.lon == None:
                 cursor.execute(
                     query, (
-                    station.name,
+                    codes[i],
+                    stations[i].name,
                     None,
                     None))
             else:
                 cursor.execute(query, (
-                    station.name,
-                    station.coords.lat,
-                    station.coords.lon
+                    stations[i].code,
+                    stations[i].name,
+                    stations[i].coords.lat,
+                    stations[i].coords.lon
                 ))
         self.connection.commit()
         # print("Data inserted.")
@@ -233,11 +243,17 @@ class MongoDBManager():
     def __init__(self):
         self.client = MongoClient('mongodb+srv://root:BigData@cluster0.oc5hq.mongodb.net/test')
         self.db = self.client.TrafficBolzano
-        self.collection = self.db.Predictions
+        
 
     # Inserting model predictions inside the collection
-    def insert_predictions(self,dataframe):
-        self.collection.insert_many(dataframe.to_dict('records'))
+    def insert_predictions(self,dataframe, collection: Optional[str] = None):
+        if collection is None:
+            self.collection.insert_many(dataframe.to_dict('records'))
+        else:
+            collection.insert_many(dataframe.to_dict('records'))            
 
-    def delete_all_documents(self):
-        self.collection.delete_many({})
+    def delete_all_documents(self, collection):
+        self.db[collection].delete_many({})
+    
+    def insert_csv_inside_db(self,csv_path, collection):
+        self.collection = self.db[collection]
