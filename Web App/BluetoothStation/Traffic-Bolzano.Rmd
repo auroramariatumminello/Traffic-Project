@@ -49,8 +49,19 @@ selectInput(inputId = "map_style",
             choices = c("streets","open-street-map","light","dark"))
             #width = "100%")
 
+now = format(Sys.time(), "%Y-%m-%d %H:%M:%S")
 
-latest_timestamp = mongo_db$find(sort = '{"timestamp":-1}', limit=1)$timestamp[1]
+latest_timestamp = mongo_db$find(
+  query = paste0('{"timestamp":{"$gt": "',"2021-07-19 00:00:00",'"}}'),
+  sort = '{"timestamp":1}', 
+  limit=1)$timestamp[1]
+
+# In case latest data available is furthest than two hours ago
+# and predictions are not available for this time or in the future
+if(is.null(latest_timestamp)){
+  latest_timestamp = mongo_db$find(sort = '{"timestamp":-1}', 
+                                   limit=1)$timestamp[1]
+}
 
 # Palettes for real-time map
 palettes = list("streets" = pals::kovesi.diverging_rainbow_bgymr_45_85_c67(5),
@@ -64,11 +75,14 @@ palettes = list("streets" = pals::kovesi.diverging_rainbow_bgymr_45_85_c67(5),
 ```{r}
 renderPlotly({
   
-  latest_data = data.frame(mongo_db$find(paste0('{"timestamp":"',latest_timestamp,'"}')) %>%
+  latest_data = data.frame(mongo_db$aggregate(paste0(
+   '[{"$match": {"timestamp": "',latest_timestamp,'"}}, 
+    {"$group": {"_id": "$station", "count": {"$max": "$count"}}}]'))) %>%
+    rename(station = X_id) %>%
     inner_join(dbGetQuery(con, paste0(
-      "SELECT * FROM bluetoothstations.station 
+      "SELECT name, latitude, longitude FROM bluetoothstations.station 
        WHERE latitude IS NOT NULL and longitude IS NOT NULL;"
-    )),by = c("station"="name")))
+    )),by = c("station"="name"))
 
     # Plotting
   map_style = input$map_style[1]
