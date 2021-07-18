@@ -18,19 +18,16 @@ import Database_Manager
 # %%
 # 1. Access latest data
 def initialize_dataset(last_date):
-    # 1. Selecting the most recent data inside the db
+    # Selecting the most recent data inside the db
     db = Database_Manager.MySQLStationManagerAWS()
     start_date = (last_date-timedelta(hours=4)).strftime("%Y-%m-%d %H:%M:%S")
     data = pd.DataFrame(db.execute_query('SELECT * FROM bluetoothstations.measurement WHERE timestamp >= \"'+start_date+'\";'),columns=['timestamp','count','station'])
     return data, db
 
 def prepare_dataset_for_sequential(dataframe, last_date, db):
-    first_date = db.execute_query("SELECT MIN(timestamp) FROM bluetoothstations.measurement;")[0][0]
-    # 2. Convert timestamp to int
     data = dataframe.copy()
-    # data['timestamp'] = [(int(x.timestamp())-int(first_date.timestamp())) for x in data['timestamp']]
-
-    # 3. Create a list of dataframe for each station
+    
+    # Create a list of dataframe for each station
     stations = db.list_all_stations()
     stations = [x.to_list()[:2] for x in stations]
     codes = dict()
@@ -39,7 +36,7 @@ def prepare_dataset_for_sequential(dataframe, last_date, db):
     data['station'] = [codes[x] for x in data['station']]
     data_per_station = [data[data['station']== x] for x in range(1,len(stations)+1)]
     data = data[['count','timestamp','station']]
-    return data_per_station, codes, first_date
+    return data_per_station, codes
 
 # 2. Preprocessing data considering 5 temporal stages of data
 def create_model_dataset(dataframes):
@@ -141,13 +138,13 @@ while(i<=2):
     
     # 1. Create data for the model and eventually appending latest data with predictions for new predictions
     data = pd.concat([data,predictions])
-    data_per_station, codes, first_date = prepare_dataset_for_sequential(data, last_date, db)
+    data_per_station, codes = prepare_dataset_for_sequential(data, last_date, db)
     test, scaler = create_model_dataset(data_per_station)
     test = test.values
     test_X, test_y = data_split(test)
     
     # 2. Model import
-    model = model_import("../data/model/")
+    model = model_import()
     
     # 3. Predictions
     predictions = None
