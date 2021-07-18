@@ -246,11 +246,8 @@ class MongoDBManager():
         
 
     # Inserting model predictions inside the collection
-    def insert_predictions(self,dataframe, collection: Optional[str] = None):
-        if collection is None:
-            self.collection.insert_many(dataframe.to_dict('records'))
-        else:
-            collection.insert_many(dataframe.to_dict('records'))            
+    def insert_predictions(self,dataframe, collection = 'Predictions'):
+        self.db[collection].insert_many(dataframe.to_dict('records'))            
 
     def delete_all_documents(self, collection):
         self.db[collection].delete_many({})
