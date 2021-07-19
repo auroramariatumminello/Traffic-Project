@@ -1,3 +1,0 @@
-SET SQL_SAFE_UPDATES=0;
-DELETE FROM bluetoothstations.test;
-SET SQL_SAFE_UPDATES=1;
