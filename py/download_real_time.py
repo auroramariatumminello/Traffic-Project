@@ -17,6 +17,7 @@ data_url = "https://mobility.api.opendatahub.bz.it/v2/flat%2Cnode/BluetoothStati
 data_format = "{}-{}-{}T{}%3A{}%3A{}.000%2B0000"  # YYYY-mm-ddTHH:MM:SS
 
 # %%
+# Get data from sdate to edate, with the possibility of saving data inside filename
 def get_data_of_day(url, sdate, edate, filename=None):
     try:
         req = requests.get(url.format(data_format.format(sdate.year, 
@@ -55,6 +56,7 @@ def from_json_to_list(json_data: json):
             result.append(m)
     return result
 # %%
+# Starting from the latest timestamp available inside the db, it gathers data
 def get_missing_data(url=data_url, data_path = 'data/latest_data.csv'):
     # Manager to communicate with MySQL on EC2
     db = MySQLStationManagerAWS()
