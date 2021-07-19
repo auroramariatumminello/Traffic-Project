@@ -1,0 +1,22 @@
+.form-group.shiny-input-container {
+  margin-top: 65px;
+}
+
+
+.nav.navbar-nav.navbar-left {
+  position: relative;
+  right: 480px;
+}
+
+.navbar-logo:after {
+  content: "logo.png";
+  font-size: 14px;
+  font-weight: bold;
+  font-family: "Montserrat, sans-serif";
+  position: relative;
+  right: 10px;
+}
+
+.navbar-brand{
+  content: "Traffic in Bolzano";
+}

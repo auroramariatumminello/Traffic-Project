@@ -1,26 +1,34 @@
 #%%
+# Libraries
+
+## DB Connectors
 import mysql.connector
-from typing import List, Optional
+from pymongo import MongoClient
+import yaml
+
+# Data transformation
 import pandas as pd
 from tqdm import tqdm
-from BluetoothStation import BluetoothStation, Measurement, Position
-from pymongo import MongoClient
 
-#%%
+# Typing and objects
+from typing import List, Optional
+from BluetoothStation import BluetoothStation, Measurement, Position
+
+config_path = "Shiny Bolzano Application/config.yml"
+
+# MySQL DB Manager for local DB
 class MySQLStationManager:
     
-    def __init__(self,user="Leonardo"):
+    def __init__(self,user: str):
         try:
-            if user=='Aurora':
-                password = "MyNewPass"
-            else:
-                password="banana182"
+            with open(config_path, "r") as ymlfile:
+                config = yaml.safe_load(ymlfile)['local']
             self.connection = mysql.connector.connect(
-                host="127.0.0.1",
-                user="root",
-                password=password,
-                port=3306,
-                database="bluetoothstations",
+                host=config['host'],
+                user=config['user'],
+                password=config['password'],
+                port=config['port'],
+                database=config['database'],
                 auth_plugin='mysql_native_password',
             )
             print("Connection established.")
@@ -30,9 +38,7 @@ class MySQLStationManager:
         self.measurements = []
         self.stations = []
 
-    # Need to update: ask whether the station is already in the station table
     def insert_measurements(self, observations: List[Measurement]):
-        # If the station is in BluetoothStation table
         cursor = self.connection.cursor()
         query = "INSERT IGNORE into measurement (timestamp, count, station) VALUES (%s, %s, %s)"
         try:
@@ -42,7 +48,6 @@ class MySQLStationManager:
                     obs.count,
                     obs.station.name
                 ))
-            # print("Data inserted.")
             cursor.close()
         except mysql.connector.errors.IntegrityError:
             pass
@@ -65,7 +70,6 @@ class MySQLStationManager:
                     station.coords.lat,
                     station.coords.lon
                 ))
-        # print("Data inserted.")
         cursor.close()
 
     # Generalize by inserting optional parameter about the station(s)
@@ -81,7 +85,6 @@ class MySQLStationManager:
                 count,
                 station
             ))
-        print("Finished.")
         cursor.close()
         return measurements
     
@@ -98,20 +101,21 @@ class MySQLStationManager:
                 name,
                 Position(latitude, longitude)
             ))
-        print("Finished.")
         cursor.close()
         return stations
-
-#%%
+    
+# Database manager of Amazon Web Services
 class MySQLStationManagerAWS:
     
     # Connects to the database on Amazon RDS
     def __init__(self):
+        with open(config_path, "r") as ymlfile:
+            config = yaml.safe_load(ymlfile)['default']
         self.connection = mysql.connector.connect(
-            host="traffic-db.ce2ieg6xrefy.us-east-2.rds.amazonaws.com",
-            user="marshall",
-            passwd="happyslashgiving",
-            db="bluetoothstations",
+            host=config['db_host'],
+            user=config['db_user'],
+            passwd=config['password'],
+            db=config["dbname"],
             autocommit = True)
         print("Connection successfully created.")
             
@@ -135,10 +139,10 @@ class MySQLStationManagerAWS:
                 obs.count,
                 obs.station.name
             ))
-        # print("Data inserted.")
         self.connection.commit()
         cursor.close()
          
+    # Get the last numerical code used for stations
     def get_last_code(self):
         cursor = self.connection.cursor()
         query = "SELECT MAX(code) FROM bluetoothstations.station"
@@ -241,16 +245,15 @@ class MySQLStationManagerAWS:
 class MongoDBManager():
     
     def __init__(self):
-        self.client = MongoClient('mongodb+srv://root:BigData@cluster0.oc5hq.mongodb.net/test')
+        with open(config_path, "r") as ymlfile:
+            config = yaml.safe_load(ymlfile)['default']
+        self.client = MongoClient(config['mongodb'])
         self.db = self.client.TrafficBolzano
-        
 
     # Inserting model predictions inside the collection
     def insert_predictions(self,dataframe, collection = 'Predictions'):
         self.db[collection].insert_many(dataframe.to_dict('records'))            
 
+    # Empty the collection 
     def delete_all_documents(self, collection):
         self.db[collection].delete_many({})
-    
-    def insert_csv_inside_db(self,csv_path, collection):
-        self.collection = self.db[collection]

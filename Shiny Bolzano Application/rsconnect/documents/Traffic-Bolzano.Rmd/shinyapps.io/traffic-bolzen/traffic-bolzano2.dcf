@@ -1,0 +1,13 @@
+name: traffic-bolzano2
+title: Traffic-Bolzano
+username:
+account: traffic-bolzen
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 4334616
+bundleId: 4831551
+url: https://traffic-bolzano.shinyapps.io/traffic-bolzano2/
+when: 1626626982.07451
+lastSyncTime: 1626626982.07451
+asMultiple: TRUE
+asStatic: FALSE
