@@ -25,7 +25,7 @@ library("maps")
 library("rio")
 
 # Connection to DB
-source("mysql_connection.R")
+source("db_connection.R")
 library("RMariaDB")
 
 # Establish connection to MySQL
