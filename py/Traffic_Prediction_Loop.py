@@ -134,10 +134,11 @@ i=1
 predictions = None
 last_date = Database_Manager.MySQLStationManagerAWS().get_latest_datetime()
 data, db = initialize_dataset(last_date)
-while(i<=2):
+while(i<=24):
     
     # 1. Create data for the model and eventually appending latest data with predictions for new predictions
     data = pd.concat([data,predictions])
+    print(data.tail())
     data_per_station, codes = prepare_dataset_for_sequential(data, last_date, db)
     test, scaler = create_model_dataset(data_per_station)
     test = test.values
@@ -152,14 +153,14 @@ while(i<=2):
 
     # Reordering columns before appending
     predictions = predictions[['timestamp','count','station']]
-    print("Predictions done: "+ str(i))
-    
+    predictions['timestamp'] = [x.strftime("%Y-%m-%d %H:%M:%S") for x in predictions['timestamp']]
+    print(predictions.tail())
     # 4. Updating the model
     update_model(model)
     
     # 5. Inserting predictions inside the db
     insert_inside_db(predictions)
-    
+    predictions['timestamp'] = [datetime.strptime(x,"%Y-%m-%d %H:%M:%S") for x in predictions['timestamp']]
     # 6. Get last date of "training" samples for next iteration
     last_date = predictions.timestamp[0]
     i = i+1

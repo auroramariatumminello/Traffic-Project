@@ -98,7 +98,7 @@ renderPlotly({
                   '</br></br>Vehicles: ', count),
     hoverinfo = "text",
     marker=list(opacity = 1,
-                size = seq(200,500))
+                size = seq(200,800))
   )%>%
     layout(
       mapbox = list(
