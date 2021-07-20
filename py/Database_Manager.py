@@ -113,19 +113,19 @@ class MySQLStationManagerAWS:
     def __init__(self, modality = "Github"):
         if modality == "Github":
             self.connection = mysql.connector.connect(
-                host=os.environ['db_host'],
-                user=os.environ['db_user'],
-                passwd=os.environ['password'],
-                db=os.environ["dbname"],
+                host=os.environ['DB_HOST'],
+                user=os.environ['DB_USER'],
+                passwd=os.environ['PASSWORD'],
+                db=os.environ["DBNAME"],
                 autocommit = True)
         else:
             with open(config_path, "r") as ymlfile:
                 config = yaml.safe_load(ymlfile)['default']
             self.connection = mysql.connector.connect(
-                host=config['DB_HOST'],
-                user=config['DB_USER'],
-                passwd=config['PASSWORD'],
-                db=config["DBNAME"],
+                host=config['db_host'],
+                user=config['db_user'],
+                passwd=config['password'],
+                db=config["dbname"],
                 autocommit = True)
         print("Connection successfully created.")
             
