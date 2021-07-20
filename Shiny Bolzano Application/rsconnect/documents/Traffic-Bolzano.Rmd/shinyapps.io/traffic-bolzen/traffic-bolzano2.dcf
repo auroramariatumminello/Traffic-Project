@@ -5,9 +5,9 @@ account: traffic-bolzen
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 4334616
-bundleId: 4837607
+bundleId: 4838397
 url: https://traffic-bolzano.shinyapps.io/traffic-bolzano2/
-when: 1626784843.08883
-lastSyncTime: 1626784843.08883
+when: 1626798449.27073
+lastSyncTime: 1626798449.27073
 asMultiple: TRUE
 asStatic: FALSE
