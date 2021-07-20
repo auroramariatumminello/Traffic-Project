@@ -5,6 +5,7 @@
 import mysql.connector
 from pymongo import MongoClient
 import yaml
+import os
 
 # Data transformation
 import pandas as pd
@@ -17,6 +18,7 @@ from BluetoothStation import BluetoothStation, Measurement, Position
 config_path = "Shiny Bolzano Application/config.yml"
 
 # MySQL DB Manager for local DB
+# Note: it is necessary to dispose of local credentials
 class MySQLStationManager:
     
     def __init__(self,user: str):
@@ -108,15 +110,23 @@ class MySQLStationManager:
 class MySQLStationManagerAWS:
     
     # Connects to the database on Amazon RDS
-    def __init__(self):
-        with open(config_path, "r") as ymlfile:
-            config = yaml.safe_load(ymlfile)['default']
-        self.connection = mysql.connector.connect(
-            host=config['db_host'],
-            user=config['db_user'],
-            passwd=config['password'],
-            db=config["dbname"],
-            autocommit = True)
+    def __init__(self, modality = "Github"):
+        if modality == "Github":
+            self.connection = mysql.connector.connect(
+                host=os.environ['db_host'],
+                user=os.environ['db_user'],
+                passwd=os.environ['password'],
+                db=os.environ["dbname"],
+                autocommit = True)
+        else:
+            with open(config_path, "r") as ymlfile:
+                config = yaml.safe_load(ymlfile)['default']
+            self.connection = mysql.connector.connect(
+                host=config['db_host'],
+                user=config['db_user'],
+                passwd=config['password'],
+                db=config["dbname"],
+                autocommit = True)
         print("Connection successfully created.")
             
     def get_tables(self):
@@ -244,10 +254,13 @@ class MySQLStationManagerAWS:
 
 class MongoDBManager():
     
-    def __init__(self):
-        with open(config_path, "r") as ymlfile:
-            config = yaml.safe_load(ymlfile)['default']
-        self.client = MongoClient(config['mongodb'])
+    def __init__(self, modality = "Github"):
+        if modality == "Github":
+            with open(config_path, "r") as ymlfile:
+                config = yaml.safe_load(ymlfile)['default']
+            self.client = MongoClient(config['mongodb'])
+        else:
+            self.client = MongoClient(os.environ['mongodb'])
         self.db = self.client.TrafficBolzano
 
     # Inserting model predictions inside the collection
