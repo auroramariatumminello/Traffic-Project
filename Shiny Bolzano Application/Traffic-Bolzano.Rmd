@@ -69,12 +69,9 @@ palettes = list("streets" = pals::kovesi.diverging_rainbow_bgymr_45_85_c67(5),
                  "light" = pals::brewer.ylorrd(10),
                  "dark" = pals::plasma(50))
 
-# verbatimTextOutput(latest_timestamp)
 ```
 
-```{r}
-renderText({latest_timestamp})
-```
+<h4>`r latest_timestamp`</h4>
 
 ### Traffic prediction
 
@@ -118,7 +115,6 @@ renderPlotly({
 })%>%
 bindCache(input$map_style)
 ```
-
 
 Stations {data-orientation=columns}
 =====================================   
@@ -260,7 +256,11 @@ renderPlotly({
           parents = ~daytime,
           values = ~mean,
           hoverinfo = ~mean) %>%
-    layout(treemapcolorway=c("#d0f4de","#fcf6bd","#a9def9","#e4c1f9"))
+    layout(
+      treemapcolorway=c("#d0f4de","#fcf6bd","#a9def9","#e4c1f9"),
+      margin = list(l = 0, r = 0, # No Margin around the plot
+                    b = 0, t = 0,
+                    pad = 0))
 })%>%
 bindCache(input$station)
 ```
@@ -284,8 +284,6 @@ dateRangeInput(inputId = "pickup_date",
 
 ```
 
-Please, select a timerange larger than 5 days.
-
 Column {data-width=600}
 -------------------------------------
 
@@ -295,9 +293,8 @@ Column {data-width=600}
 renderPlotly({
   start = input$pickup_date[1]
   end = input$pickup_date[2]
-  if(start >= end || end-start <5){
-   start = format(latest_data-5,'%Y-%m-%d')[[1]]
-   end = format(latest_data,'%Y-%m-%d')[[1]]
+  if(start > end){
+   start = end-5
   }
   history = dbGetQuery(con,paste0("
     SELECT timestamp, SUM(count) as vehicles
@@ -308,11 +305,39 @@ renderPlotly({
                   aes(x=timestamp,
                       y = vehicles,
                       text = paste("Date: ",format(timestamp,"%Y-%m"))))+
-             geom_smooth(fill='#BFDCED',
-                         span = 0)+
+             geom_smooth(fill='#BFDCED')+
              labs(title = paste0("Traffic from ",start," to ",end))+
              theme_classic()+
              theme(plot.title = element_text(hjust = 0.5)),tooltip=c('text','vehicles'))
+})
+```
+
+### Actual historical data
+```{r}
+renderPlotly({
+  start = input$pickup_date[1]
+  end = input$pickup_date[2]
+  if(start > end){
+   start = end-5
+  }
+  history = dbGetQuery(con,paste0("
+    SELECT timestamp, SUM(count) as vehicles
+    FROM bluetoothstations.measurement
+    WHERE timestamp BETWEEN '",start,"' AND '",end,"' 
+    GROUP BY timestamp;"))
+  
+  plot_ly(history) %>%
+    add_trace(
+          x = ~timestamp, 
+          y = ~vehicles, 
+          type = 'scatter', 
+          mode = 'lines+markers',
+          text = ~paste0("Date: ",format(timestamp,"%Y-%m-%d %H:%M")),
+          hoverinfo = 'text',
+          line = list(color = '#e4c1f9'),
+          marker = list(color = '#daa8f7')
+          ) %>%
+    layout(title = paste0("Traffic from ",start," to ",end))
 })
 ```
 
@@ -407,13 +432,14 @@ renderPlotly({
     group_by(weekday) %>%
     summarise(count = sum(vehicles)) %>%
     rename(hour = weekday) %>%
-    mutate(weekday = '')
+    mutate(weekday = "")
   data$hour = assign_daytime(data$hour)
   data %>%
     group_by(weekday,hour) %>%
     summarise(count = sum(vehicles)) %>%
     rbind(data_second) %>%
     mutate(ids = paste0(weekday,hour)) %>%
+    mutate(weekday = ifelse(weekday=='',"Weekdays",weekday)) %>%
   plot_ly() %>%
     add_trace(
       type = 'sunburst',
@@ -421,7 +447,8 @@ renderPlotly({
       labels = ~hour,
       parents = ~weekday, 
       values = ~count,
-      branchvalues = 'total'
+      branchvalues = 'total',
+      hoverinfo = "label+value+percent parent"
     ) %>%
     layout(sunburstcolorway = c("#ffadad","#ffd6a5","#FBF4B1","#CDF3DC","#a9def9","#bbadff","#FFADD3"))
 })
@@ -451,18 +478,19 @@ renderPlotly({
     group_by(season) %>%
     summarise(vehicles = sum(vehicles))%>%
     rename(month = season) %>%
-    mutate(season = "") %>%
+    mutate(season = "Seasons") %>%
     rbind(data) %>%
   # Plot the sunburst
   plot_ly(labels = ~month,
           parents = ~season, 
           type = 'sunburst',
           values = ~vehicles,
-          branchvalues = 'total') %>%
+          branchvalues = 'total',
+          hoverinfo = "label+value+percent parent"
+) %>%
     layout(sunburstcolorway = c('#FFADD3','#a9def9','#FBF4B1','#CDF3DC'))
 })
 ```
-
 
 About
 =====================================
@@ -471,14 +499,37 @@ Column {data-width=600}
 -------------------------------------
 ### The project
 
-The aim of this project was to design and implement a big data system able to predict in near-time the traffic associated with specific and crucial points of interest monitored by Bluetooth sensors in the Bolzano area. We considered the data available from Open Data Hub Südtirol, in particular those related to Bluetooth Stations. 
+#### Aim
+The aim of this project was to design and implement a big data system able to predict in near-time the traffic associated with specific and crucial points of interest monitored by Bluetooth sensors in the Bolzano area. We considered the data available from <a href="https://opendatahub.readthedocs.io/en/latest/index.html" target="_blank">Open Data Hub Südtirol</a>, in particular those related to Bluetooth Stations. 
 
-The Github Repository is available [here](https://github.com/AuroraArctic/Traffic-Project/). 
+#### Github Repository
+
+The Github Repository is available <a href="https://github.com/AuroraArctic/Traffic-Project/" target="_blank">here</a>, where continuous data collection is handled by Github Actions and then ingested inside MySQL and MongoDB. 
+
+#### Plots specification
+
+All the plots are interactive and offer the possibility to zoom, de-zoom, select a subset of data by double clicking, download a png version of the plot and compare labels on hover. 
 
 ### Results
 
+#### Weekly traffic
+As you can see from the previous pages, the busiest hours are 9 am and 3 pm for all days of the week, although Saturday and Sunday have less traffic than working days. A noticeable decrease of vehicles passing is present on Sunday night, since Monday is the first work day of the week, such that in percentage terms the traffic goes from the usual 10% to 5% at night. 
+
+#### Seasonal traffic
+The majority of traffic is concentrated in Spring and Summer, although the average traffic in June and July is reduced by more than half compared to the other months.
+
+#### Historical trend and COVID19 influence
+Generally, the trend is increasing year by year, except for a specific time period. As expected, during spring 2020, in correspondence of the lockdown due to Covid19, there was a significant fall in terms of traffic, which instead is not so drastically replicated in 2021. 
+
+#### Most trafficked areas
+Related to the geographical zones, notice that data is not uniquely referred to Bolzano, but also to Merano, Laives and Trento. The busiest areas are near the A22 highway, in particular in proximity of North Trento, whereas Merano and North Bolzano typically have lightly less trafficked.   
+
 Column {data-width=400}
 -------------------------------------
-### About us
+### Pipeline of our project
+
+```{r, echo=FALSE, fig.align='center', fig.pos='h', fig.cap="Stages of the project, divided into Data collection and storage, Traffic Model and Web Application (visualization of results)."}
+knitr::include_graphics("Pipeline.png")
+```
 
 
