@@ -15,7 +15,7 @@ from tqdm import tqdm
 from typing import List, Optional
 from BluetoothStation import BluetoothStation, Measurement, Position
 
-config_path = "Shiny Bolzano Application/config.yml"
+config_path = "../Shiny Bolzano Application/config.yml"
 
 # MySQL DB Manager for local DB
 # Note: it is necessary to dispose of local credentials
@@ -255,7 +255,7 @@ class MySQLStationManagerAWS:
 class MongoDBManager():
     
     def __init__(self, modality = "Github"):
-        if modality == "Github":
+        if modality != "Github":
             with open(config_path, "r") as ymlfile:
                 config = yaml.safe_load(ymlfile)['default']
             self.client = MongoClient(config['mongodb'])
