@@ -23,4 +23,10 @@ jobs:
           pip install -r py/model_requirements.txt
           
       - name: execute py script # run sj-gobierno.py to get the latest data
+        env:
+          DBNAME: ${{ secrets.DBNAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          PASSWORD: ${{ secrets.PASSWORD }}
+          MONGODB: ${{ secrets.MONGODB}}
         run: python py/Traffic_Prediction_Loop.py
