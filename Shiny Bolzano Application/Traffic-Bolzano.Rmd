@@ -292,21 +292,17 @@ Column {data-width=600}
 ### Historical trend of traffic
 
 ```{r}
-# === HANDLE EXCEPTIONS:
-# === 1. start >= end
-# === 2. distance between start and end < 5 days
-
 renderPlotly({
   start = input$pickup_date[1]
   end = input$pickup_date[2]
-  if(start >= end){
+  if(start >= end || end-start <5){
    start = format(latest_data-5,'%Y-%m-%d')[[1]]
    end = format(latest_data,'%Y-%m-%d')[[1]]
   }
   history = dbGetQuery(con,paste0("
     SELECT timestamp, SUM(count) as vehicles
     FROM bluetoothstations.measurement
-    WHERE timestamp BETWEEN '",input$pickup_date[1],"' AND '",input$pickup_date[2],"' 
+    WHERE timestamp BETWEEN '",start,"' AND '",end,"' 
     GROUP BY timestamp;"))
   ggplotly(ggplot(data = history,
                   aes(x=timestamp,
@@ -314,7 +310,7 @@ renderPlotly({
                       text = paste("Date: ",format(timestamp,"%Y-%m"))))+
              geom_smooth(fill='#BFDCED',
                          span = 0)+
-             labs(title = paste0("Traffic from ",input$pickup_date[1]," to ",input$pickup_date[2]))+
+             labs(title = paste0("Traffic from ",start," to ",end))+
              theme_classic()+
              theme(plot.title = element_text(hjust = 0.5)),tooltip=c('text','vehicles'))
 })
@@ -471,14 +467,18 @@ renderPlotly({
 About
 =====================================
 
-## The project
+Column {data-width=600}
+-------------------------------------
+### The project
 
-- link to the repository
-- aim
-- where we get data
+The aim of this project was to design and implement a big data system able to predict in near-time the traffic associated with specific and crucial points of interest monitored by Bluetooth sensors in the Bolzano area. We considered the data available from Open Data Hub Südtirol, in particular those related to Bluetooth Stations. 
 
-## Results
+The Github Repository is available [here](https://github.com/AuroraArctic/Traffic-Project/). 
 
-- july and august lower the mean traffic
-- more traffic at 9 and 15
+### Results
+
+Column {data-width=400}
+-------------------------------------
+### About us
+
 
