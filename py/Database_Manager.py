@@ -122,10 +122,10 @@ class MySQLStationManagerAWS:
             with open(config_path, "r") as ymlfile:
                 config = yaml.safe_load(ymlfile)['default']
             self.connection = mysql.connector.connect(
-                host=config['db_host'],
-                user=config['db_user'],
-                passwd=config['password'],
-                db=config["dbname"],
+                host=config['DB_HOST'],
+                user=config['DB_USER'],
+                passwd=config['PASSWORD'],
+                db=config["DBNAME"],
                 autocommit = True)
         print("Connection successfully created.")
             
@@ -260,7 +260,7 @@ class MongoDBManager():
                 config = yaml.safe_load(ymlfile)['default']
             self.client = MongoClient(config['mongodb'])
         else:
-            self.client = MongoClient(os.environ['mongodb'])
+            self.client = MongoClient(os.environ['MONGODB'])
         self.db = self.client.TrafficBolzano
 
     # Inserting model predictions inside the collection

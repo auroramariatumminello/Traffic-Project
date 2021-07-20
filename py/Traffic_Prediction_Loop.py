@@ -144,7 +144,7 @@ last_date = Database_Manager.MySQLStationManagerAWS().get_latest_datetime()
 data, db = initialize_dataset(last_date)
 
 # Enter inside the loop:
-while(i<=24):
+while(i<=60):
     
     # 1. Create data for the model and eventually appending latest data with predictions for new predictions
     data = pd.concat([data,predictions])
